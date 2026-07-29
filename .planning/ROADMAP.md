@@ -41,6 +41,7 @@ A phase does not close on "it ran without crashing." Green means all of:
 ## Phases
 
 **Phase Numbering:**
+
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
@@ -57,43 +58,59 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Skeleton
+
 **Goal**: The repo has a shape and a gate — every later phase can be judged pass/fail by one command
 **Mode:** mvp
 **Owner:** agent
 **Depends on**: Nothing (first phase)
 **Requirements**: OPS-02, OPS-03, OPS-04
 **Success Criteria** (what must be TRUE):
+
   1. `ruff check .`, `mypy src/`, and `pytest` all run and pass on a fresh clone with no manual setup beyond a documented install step
   2. `git status` is clean and `.gitignore` covers the env file, the SQLite database, the research cache, and Python artifacts — the author can confirm no secret path is trackable
   3. The repo has a `src/` package layout, a `pyproject.toml` pinning the locked dependency set, and a `creators.yaml` that is loadable but not yet consumed
   4. `journal.md` exists with a day-one entry
+
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 01-01-PLAN.md — Walking skeleton tracer: installed package → `creatorpulse collect` reads `creators.yaml`, logs a run, exits 0
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 01-02-PLAN.md — The suite is real: one loader test, the fixture root, and the hand-run recorder
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 01-03-PLAN.md — The gate is documented and green: README block, journal day-one entry, `.gitignore` extension
 
 Notes:
+
 - `.gitignore` already exists at the repo root and is committed. This phase **extends** it; it does not create it. Secrets must never reach git history — an un-commit is a rotation, not a fix.
 - `pytest` passing here means the suite runs and is wired, not that it covers behaviour. OPS-05/06/07 land in Phase 3.
 - No new dependencies beyond the locked set (`requests`, `gspread`, `discord.py`, `playwright`, `PyYAML`, `pytest`, `ruff`, `mypy`). Research closed all 8 gaps against stdlib.
 
 ### Phase 2: VPS & systemd
+
 **Goal**: A rented Linux box runs scheduled work unattended, logs it, and holds secrets the repo never sees
 **Mode:** mvp
 **Owner:** human
 **Depends on**: Phase 1
 **Requirements**: RUN-03, RUN-04, OPS-01
 **Success Criteria** (what must be TRUE):
+
   1. A systemd timer fires on schedule with no human present, and the author sees its output afterwards via `journalctl -u <unit>`
   2. `systemctl start <unit>` succeeds against the same code path that works interactively — proving the stripped systemd environment (PATH, HOME, cwd) has been handled, not dodged
   3. The service reads secrets from a `chmod 600` env file via `EnvironmentFile`, and those values are absent from the repo and from `git log`
   4. The timer survives a reboot and, with `Persistent=true`, catches up a missed run
   5. The author can explain out loud, without notes, why systemd timer beats cron here
+
 **Plans**: TBD
 
 Notes:
+
 - **Human-built. The agent does not generate the unit file, the timer file, the UFW rules, or the SSH configuration.** This is an afternoon of work and unfakeable in conversation.
 - At this point the collector does not exist. The timer targets a placeholder entrypoint from Phase 1; RUN-03 fully closes when the real collector is wired in Phase 3, whose criteria carry that check forward.
 - Verify the schedule with `systemd-analyze calendar`, not by reasoning about the `OnCalendar` string.
@@ -102,20 +119,24 @@ Notes:
 - Never cut this phase.
 
 ### Phase 3: Collector Core & API Sources
+
 **Goal**: Real numbers from YouTube and Twitch land in SQLite with history, and one broken source cannot take the run down
 **Mode:** mvp
 **Owner:** agent
 **Depends on**: Phase 2
 **Requirements**: CFG-01, CFG-02, CFG-03, SRC-01, SRC-02, SRC-04, SRC-05, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, RUN-01, RUN-02, RUN-05, OPS-05, OPS-06, OPS-07
 **Success Criteria** (what must be TRUE):
+
   1. The author adds a creator to `creators.yaml`, re-runs the collector, and that creator's row appears — with no code change; a malformed entry instead fails at startup naming the offending creator and field
   2. Running the collector twice on the same day leaves the total row count unchanged, and yesterday's rows are untouched — the author can see both facts in one `sqlite3` query
   3. A source made to fail is logged with creator, source, and cause, counted in that run's `runs` row, and the remaining creators still complete
   4. A metric the platform does not expose reads as NULL in the database, never 0 — and the Twitch `followers` column is NULL on every row for exactly this reason
   5. Every run appends a `runs` row with start, duration, rows written, and failure count, and the bot can read the database while the collector writes without a lock error
+
 **Plans**: TBD
 
 Notes:
+
 - Heaviest phase by requirement count (18 of 45). Expect several plans. Build order within it is dependency-driven: `models.py` + `db.py` first (everything depends on the record shape), then `config.py` and the two API sources, then `collector.py` orchestration.
 - **Confirm early, before building the parser:** make one live `GET /helix/videos` call with an app access token to confirm `view_count` is reachable. The followers auth wall is verified HIGH; this endpoint was not separately live-tested. If it also walls off, the Twitch metric needs rethinking on day one, not day five.
 - SETTLED, do not re-litigate: Twitch metric is summed recent-VOD views + live status, not followers. YouTube delta is computed on view count, not subscribers (subscriberCount rounds to 3 significant figures above 1k).
@@ -126,20 +147,24 @@ Notes:
 - Manual gate: the author watches a real run pull real API data into the real database.
 
 ### Phase 4: Playwright & Sheets
+
 **Goal**: The third source works without an API, and the ops team gets a Sheet they can actually read
 **Mode:** mvp
 **Owner:** agent
 **Depends on**: Phase 3
 **Requirements**: SRC-03, SHEET-01, SHEET-02, SHEET-03, SHEET-04, SHEET-05, SHEET-06, SHEET-07
 **Success Criteria** (what must be TRUE):
+
   1. The author opens the real Google Sheet after a real run and sees one Dashboard row per creator with the latest snapshot and its day-over-day delta on views — with subscriber/follower figures visibly labelled coarse
   2. A creator with no prior-day row shows `—` for delta, not a number computed against zero
   3. The author types into the Status column, re-runs the collector, and the typed value is still there afterwards
   4. The History tab gains exactly one row per creator per day and no existing row is rewritten
   5. A TikTok profile page yields follower count, total likes, and video count into the database; a Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
+
 **Plans**: TBD
 
 Notes:
+
 - **Highest pitfall density in the project** — 9 of 19 identified pitfalls land here. Budget the most slack and the most explicit verification.
 - Likely needs `/gsd-plan-phase --research-phase 4`. TikTok's live page structure and selectors are not knowable in advance and will need at least one iteration against saved HTML fixtures.
 - Never `.clear()` the Dashboard tab. Write only the DB-owned column range (e.g. `A2:F{n}`) so the human-edited Status column survives. Keep Status last in the column order — this layout is a contract with Phase 5.
@@ -151,40 +176,48 @@ Notes:
 - Manual gate: the author watches real data reach the real Sheet.
 
 ### Phase 5: Apps Script
+
 **Goal**: The Sheet stops being a dump and becomes a two-way surface — it formats itself and talks back to Discord
 **Mode:** mvp
 **Owner:** human
 **Depends on**: Phase 4
 **Requirements**: SCRIPT-01, SCRIPT-02, SCRIPT-03, SCRIPT-04
 **Success Criteria** (what must be TRUE):
+
   1. Opening the Sheet shows a custom menu that was not there before
   2. The author edits a Status cell and a Discord message appears within seconds — observed live, not inferred from logs
   3. Day-over-day movement is visually obvious on the Dashboard through conditional formatting, without reading the numbers
   4. A time-driven trigger fires on schedule and its execution is visible in the Apps Script execution log
   5. The author can walk someone through the `onEdit` trigger's event object and the webhook call from memory
+
 **Plans**: TBD
 
 Notes:
+
 - **Entirely human-built — roughly 100 lines typed by hand. The agent does not generate this code.** It is the author's biggest gap and the interviewer's deepest skill, which is exactly why it is not delegated.
 - Hard structural dependency on Phase 4: the Dashboard column layout must be final and stable, with Status last, before triggers attach to it.
 - The Status-edit → Discord round trip is the single most interesting demo moment in the project. Rehearse it.
 - Never cut this phase.
 
 ### Phase 6: Discord Bot
+
 **Goal**: Discord becomes the place the numbers show up and the place you ask about them
 **Mode:** mvp
 **Owner:** mixed
 **Depends on**: Phase 3 (database), Phase 5 (webhook proven)
 **Requirements**: BOT-01, BOT-02, BOT-03, BOT-04, BOT-05, BOT-06, BOT-07
 **Success Criteria** (what must be TRUE):
+
   1. A daily digest posts itself to the channel on schedule, listing top movers and any failures from that run — with no human triggering it
   2. A creator whose day-over-day delta exceeds ±20% is visibly flagged in that digest
   3. A run that records failures produces its own immediate Discord message, distinct from and earlier than the scheduled digest
   4. `/creator <name>` returns that creator's current numbers and recent trend, and `/status` returns last run time, duration, rows written, and failure count — both answered from the database, in-channel
   5. The bot survives a reboot as its own systemd service, independent of the collector, and the author can explain which intents it requests and why none of them are privileged
+
 **Plans**: TBD
 
 Notes:
+
 - **Mixed ownership.** BOT-07 (bot registration, intents, scopes, invite URL in the Discord Developer Portal) and BOT-06's systemd unit file are human-built. The agent writes the command handlers and digest logic; the author must understand the permission model well enough to defend it.
 - The bot is a long-lived process and must not share a lifecycle with the one-shot collector. Separate unit, separate failure domain.
 - Slash commands need no privileged intents. Request the minimum.
@@ -196,20 +229,24 @@ Notes:
 - Manual gate: the author watches a real scheduled digest and a real failure alert land in the real channel.
 
 ### Phase 7: Reliability & Docs
+
 **Goal**: The whole loop runs cold, unattended, while someone watches — and a stranger can understand it from the README alone
 **Mode:** mvp
 **Owner:** mixed
 **Depends on**: Phase 6
 **Requirements**: OPS-08, OPS-09
 **Success Criteria** (what must be TRUE):
+
   1. A cold-start run — triggered by the timer, not by hand — lands rows in SQLite, updates the Sheet, and posts to Discord while the author tails `journalctl -f` and narrates it
   2. `/status` honestly reports staleness and failures when the run is deliberately broken, rather than reporting success from stale data
   3. The README explains the architecture with a diagram and records why each contested decision was made — including the Twitch follower auth wall and the subscriber-rounding delta choice — and reads correctly to someone who has never seen the repo
   4. The build journal contains what broke, what was decided, and which agent proposals were rejected and why — enough to answer the "how has AI changed the way you build" question truthfully
   5. A dry run on the morning of Thu 6 Aug confirms the Twitch app token is still valid and API quota has not been burned by rehearsal
+
 **Plans**: TBD
 
 Notes:
+
 - Only two requirements, but this is a real day of work and it cannot be folded into Phase 6. Several failure modes — cold start, quota burn from rehearsal itself, stale-token 401, silent sync failure — are dormant during solo development and appear only under observation. This phase is what rehearsal is for.
 - No new research needed; this is synthesis and rehearsal of prior work.
 - Proactively test the Twitch client-credentials token refresh path. The token lives ~58 days with no refresh token — you just re-request. Do not discover that mechanism during the interview.
