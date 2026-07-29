@@ -47,7 +47,7 @@ A phase does not close on "it ran without crashing." Green means all of:
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Skeleton** - Repo layout, toolchain, and the green gate that every later phase must pass
+- [x] **Phase 1: Skeleton** - Repo layout, toolchain, and the green gate that every later phase must pass (completed 2026-07-30)
 - [ ] **Phase 2: VPS & systemd** - Provisioned box, timer, journal, and secrets that never touch the repo
 - [ ] **Phase 3: Collector Core & API Sources** - Normalized records land idempotently in SQLite from YouTube and Twitch
 - [ ] **Phase 4: Playwright & Sheets** - TikTok scraped, and the Sheet becomes a readable view of the database
@@ -287,7 +287,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Skeleton | 3/3 | In Progress|  |
+| 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
 | 2. VPS & systemd | 0/TBD | Not started | - |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |

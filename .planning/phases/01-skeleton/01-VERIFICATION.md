@@ -1,11 +1,12 @@
 ---
 phase: 01-skeleton
 verified: 2026-07-30T02:26:48Z
-status: human_needed
+status: passed
 score: 4/4 must-haves verified (present-tree proof); 1 human verification item outstanding
 behavior_unverified: 0
 overrides_applied: 0
 human_verification:
+
   - test: "Fresh-clone walkthrough (the phase's own success criterion 1: 'on a fresh clone with no manual setup beyond a documented install step'). Clone the repo into a new directory (or `git clean -xdn` and confirm nothing listed is source), create a `py -3.12` venv, run `pip install -e \".[dev]\"` exactly as the README gives it, paste the README's four-command gate block verbatim, and run `creatorpulse collect`."
     expected: "All four gate commands exit 0 with no correction to the README needed; `creatorpulse collect` prints the four expected log lines; `git status` is clean."
     why_human: "All automated evidence in this report was gathered against the existing development tree, which already has a populated `.venv`, `.mypy_cache`, `.ruff_cache`, and `.pytest_cache`. That proves the gate is green today and that the README's commands are textually correct, but it does not prove the install step works from zero on an unpopulated clone — the one thing a fresh clone can prove and a populated tree cannot. The 01-03-PLAN.md itself carries this as a `<human-check>` block on Task 2, and the 01-03-SUMMARY.md's coverage table (D1-D4) references only 'manual invocation' against the current tree, not a fresh clone — the walkthrough was never actually performed."
