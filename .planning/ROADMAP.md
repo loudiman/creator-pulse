@@ -71,7 +71,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The repo has a `src/` package layout, a `pyproject.toml` pinning the locked dependency set, and a `creators.yaml` that is loadable but not yet consumed
   4. `journal.md` exists with a day-one entry
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -84,7 +84,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-03-PLAN.md — The gate is documented and green: README block, journal day-one entry, `.gitignore` extension
+- [x] 01-03-PLAN.md — The gate is documented and green: README block, journal day-one entry, `.gitignore` extension
 
 Notes:
 
@@ -287,7 +287,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Skeleton | 2/3 | In Progress|  |
+| 1. Skeleton | 3/3 | In Progress|  |
 | 2. VPS & systemd | 0/TBD | Not started | - |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
