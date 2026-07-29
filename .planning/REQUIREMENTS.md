@@ -130,13 +130,74 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| _(populated by roadmapper)_ | — | Pending |
+| CFG-01 | Phase 3: Collector Core & API Sources | Pending |
+| CFG-02 | Phase 3: Collector Core & API Sources | Pending |
+| CFG-03 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-01 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-02 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-03 | Phase 4: Playwright & Sheets | Pending |
+| SRC-04 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-05 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-01 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-02 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-03 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-04 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-05 | Phase 3: Collector Core & API Sources | Pending |
+| RUN-01 | Phase 3: Collector Core & API Sources | Pending |
+| RUN-02 | Phase 3: Collector Core & API Sources | Pending |
+| RUN-03 | Phase 2: VPS & systemd | Pending |
+| RUN-04 | Phase 2: VPS & systemd | Pending |
+| RUN-05 | Phase 3: Collector Core & API Sources | Pending |
+| SHEET-01 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-02 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-03 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-04 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-05 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-06 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-07 | Phase 4: Playwright & Sheets | Pending |
+| SCRIPT-01 | Phase 5: Apps Script | Pending |
+| SCRIPT-02 | Phase 5: Apps Script | Pending |
+| SCRIPT-03 | Phase 5: Apps Script | Pending |
+| SCRIPT-04 | Phase 5: Apps Script | Pending |
+| BOT-01 | Phase 6: Discord Bot | Pending |
+| BOT-02 | Phase 6: Discord Bot | Pending |
+| BOT-03 | Phase 6: Discord Bot | Pending |
+| BOT-04 | Phase 6: Discord Bot | Pending |
+| BOT-05 | Phase 6: Discord Bot | Pending |
+| BOT-06 | Phase 6: Discord Bot | Pending |
+| BOT-07 | Phase 6: Discord Bot | Pending |
+| OPS-01 | Phase 2: VPS & systemd | Pending |
+| OPS-02 | Phase 1: Skeleton | Pending |
+| OPS-03 | Phase 1: Skeleton | Pending |
+| OPS-04 | Phase 1: Skeleton | Pending |
+| OPS-05 | Phase 3: Collector Core & API Sources | Pending |
+| OPS-06 | Phase 3: Collector Core & API Sources | Pending |
+| OPS-07 | Phase 3: Collector Core & API Sources | Pending |
+| OPS-08 | Phase 7: Reliability & Docs | Pending |
+| OPS-09 | Phase 7: Reliability & Docs | Pending |
 
 **Coverage:**
 - v1 requirements: 45 total
-- Mapped to phases: 0
-- Unmapped: 45 ⚠️
+- Mapped to phases: 45
+- Unmapped: 0 — full coverage, no orphans, no duplicates
+
+**By phase:**
+
+| Phase | Owner | Requirements |
+|-------|-------|--------------|
+| 1. Skeleton | agent | 3 |
+| 2. VPS & systemd | human | 3 |
+| 3. Collector Core & API Sources | agent | 18 |
+| 4. Playwright & Sheets | agent | 8 |
+| 5. Apps Script | human | 4 |
+| 6. Discord Bot | mixed | 7 |
+| 7. Reliability & Docs | mixed | 2 |
+
+Notes on two assignment calls:
+
+- **OPS-02/03/04 sit in Phase 1** because that is where the gate is built. They are re-enforced at every subsequent phase via the Definition of Green in ROADMAP.md, not re-owned by later phases.
+- **OPS-06 (normalisation tests, "for each source") sits in Phase 3** alongside the two API sources. The TikTok fixture test is added in Phase 4 as part of SRC-03's own work rather than reopening OPS-06.
 
 ---
 *Requirements defined: 2026-07-29*
-*Last updated: 2026-07-29 after initial definition*
+*Last updated: 2026-07-29 after roadmap creation (traceability populated)*
