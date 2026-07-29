@@ -1,0 +1,25 @@
+# Secrets — never commit. Phase 1 loads these via systemd EnvironmentFile (chmod 600).
+.env
+*.env
+!.env.example
+service-account*.json
+credentials*.json
+token*.json
+
+# Planning tool scratch (research fetch cache — not a deliverable)
+.planning/research/.cache/
+
+# Local database
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
