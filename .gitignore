@@ -23,3 +23,9 @@ venv/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+
+# Build output and coverage
+build/
+dist/
+.coverage
+htmlcov/

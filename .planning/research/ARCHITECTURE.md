@@ -107,8 +107,10 @@ tests/
 from typing import Protocol
 from creatorpulse.models import MetricRecord, Creator
 
+
 class SourceFetcher(Protocol):
     def __call__(self, creator: Creator) -> MetricRecord: ...
+
 
 # each adapter fetches ONE creator's metrics for the current run;
 # the collector owns the loop over creators, not the adapter.
@@ -128,6 +130,7 @@ SOURCES: dict[str, SourceFetcher] = {
 from contextlib import contextmanager
 from playwright.sync_api import sync_playwright
 
+
 @contextmanager
 def browser_session():
     with sync_playwright() as p:
@@ -136,6 +139,7 @@ def browser_session():
             yield browser
         finally:
             browser.close()
+
 
 def fetch(creator: Creator, *, browser) -> MetricRecord:
     page = browser.new_page()
@@ -167,10 +171,11 @@ This keeps `SourceFetcher` itself simple (`creator -> MetricRecord`) for the com
 from dataclasses import dataclass
 from datetime import date, datetime
 
+
 @dataclass(frozen=True, slots=True)
 class MetricRecord:
     creator_id: str
-    source: str          # "youtube" | "twitch" | "tiktok"
+    source: str  # "youtube" | "twitch" | "tiktok"
     metric_date: date
     followers: int | None
     views: int | None
@@ -196,6 +201,7 @@ def safe_fetch(fetch, creator: Creator) -> MetricRecord | None:
     except Exception:
         logging.exception("fetch failed creator=%s source=%s", creator.id, fetch.__name__)
         return None
+
 
 def run() -> RunResult:
     started = datetime.now(UTC)
@@ -312,6 +318,7 @@ The `ON CONFLICT (creator_id, source, metric_date)` conflict target must name ex
 # db.py
 import sqlite3
 from pathlib import Path
+
 
 def connect(db_path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, timeout=5.0)  # sets busy_timeout equivalent
