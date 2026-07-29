@@ -20,7 +20,7 @@ It is intentionally small. It is a portfolio artifact for a Content Lab automati
 
 - [ ] Collector reads creator list from `creators.yaml` — adding a creator never requires a code change
 - [ ] YouTube Data API v3 source returns normalized metrics for a channel
-- [ ] Twitch Helix API source returns normalized metrics for a channel
+- [ ] Twitch Helix API source returns summed recent-VOD view count and live status for a channel (follower count is unobtainable — see Key Decisions)
 - [ ] TikTok source scrapes public profile pages via Playwright
 - [ ] Metrics persist to SQLite with history and an idempotent upsert on `(creator_id, source, metric_date)`
 - [ ] One creator or one source failing does not kill the run — failure is isolated and logged
@@ -32,6 +32,8 @@ It is intentionally small. It is a portfolio artifact for a Content Lab automati
 - [ ] Apps Script `onOpen` menu, time-driven trigger, and conditional formatting on the Dashboard *(human-built)*
 - [ ] Editing a Status cell in the Sheet posts to a Discord webhook via Apps Script `onEdit` *(human-built)*
 - [ ] Discord bot posts a daily digest on schedule from the VPS
+- [ ] Digest flags any creator whose day-over-day delta exceeds ±20% (static threshold, not learned)
+- [ ] A run that records failures posts to Discord immediately, separate from the scheduled digest
 - [ ] Discord `/creator` command returns a named creator's current numbers and trend
 - [ ] Discord `/status` command reports last run time, duration, and failure count
 - [ ] Secrets load from a `chmod 600` env file via systemd `EnvironmentFile`, never from the repo
@@ -47,6 +49,8 @@ It is intentionally small. It is a portfolio artifact for a Content Lab automati
 - Anything requiring a paid API tier — free public/official endpoints only
 - LLM-written prose digest — needs a paid key, first item on the cut list, excluded from v1 and v2
 - Bot-detection evasion of any kind — public unauthenticated pages, respect `robots.txt`, stop if blocked
+- Twitch follower count — hard auth wall on the official API, replaced by VOD view counts and live status
+- ML or learned anomaly detection — 5–7 days of data cannot train a baseline; static threshold instead
 - Postgres — SQLite is correct for one machine; Postgres is resume-driven overkill
 - Cron — systemd timer gives real logs, survives reboot, and is the better answer in conversation
 
@@ -105,6 +109,9 @@ Everything else the agent can draft: parsing, retries, logging, schema, tests, R
 | pytest against saved HTML/JSON fixtures | Live pages in a test loop are slow, flaky, and get you blocked | — Pending |
 | LLM digest excluded entirely, not deferred | Needs a paid key; non-goals ban paid tiers. Excluding it from requirements stops it creeping back in | — Pending |
 | Unique constraint on `(creator_id, source, metric_date)` | Makes re-runs idempotent by construction rather than by application logic | — Pending |
+| Twitch metric is VOD view count + live status, not followers | `GET /helix/channels/followers` requires a broadcaster or moderator *user* token — app credentials are rejected even for total-only counts. No OAuth relationship exists with tracked creators, so follower count is an auth wall, not a scraping problem. `Get Videos` and `Get Streams` are app-token accessible. Documented in README as a design decision | — Pending |
+| Day-over-day delta computed on view count, not subscribers | YouTube rounds `subscriberCount` to 3 significant figures above 1k subs, so sub deltas are rounding noise. View counts are unrounded and move daily. Subscriber counts still shown, labelled coarse | — Pending |
+| No new dependencies beyond `requests` | Research closed all 8 open gaps against stdlib: hand-rolled retry over tenacity, dataclasses over pydantic, stdlib logging over structlog, gspread's own auth over google-api-python-client. `requests` is already transitive via gspread | — Pending |
 
 ## Evolution
 
