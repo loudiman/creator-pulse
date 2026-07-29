@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 01
 current_phase_name: skeleton
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-07-29T18:09:17.293Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-07-29T18:13:44.149Z"
 last_activity: 2026-07-30
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 01 (skeleton) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-30 — Phase 01 execution started
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [███░░░░░░░] 33%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 6min | 2 tasks | 5 files |
+| Phase 01 P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Settled before Phase 1, do not re-litigate:
 - Database is the source of truth; the Sheet is a disposable view. Only the Status column is human-owned.
 - [Phase ?]: Extended gspread mypy override to also cover yaml module (no new dep) since PyYAML ships no type stubs
 - [Phase ?]: Creator list finalized: xQc, Pokimane, Kai Cenat (author approved) across youtube/twitch/tiktok
+- [Phase ?]: record_fixture.py validates --source/--case against ^[a-z0-9_]+$ before any network call, then re-checks resolved-path containment as a second belt
+- [Phase ?]: recorder raises on non-2xx instead of saving the body, so a blocked/challenge response can never masquerade as a real fixture
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-29T18:09:17.272Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-07-29T18:13:44.131Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

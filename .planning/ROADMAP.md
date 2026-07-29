@@ -71,7 +71,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The repo has a `src/` package layout, a `pyproject.toml` pinning the locked dependency set, and a `creators.yaml` that is loadable but not yet consumed
   4. `journal.md` exists with a day-one entry
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -80,7 +80,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 01-02-PLAN.md — The suite is real: one loader test, the fixture root, and the hand-run recorder
+- [x] 01-02-PLAN.md — The suite is real: one loader test, the fixture root, and the hand-run recorder
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -287,7 +287,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Skeleton | 1/3 | In Progress|  |
+| 1. Skeleton | 2/3 | In Progress|  |
 | 2. VPS & systemd | 0/TBD | Not started | - |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |

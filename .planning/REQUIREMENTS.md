@@ -73,7 +73,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **OPS-01**: Secrets load from a `chmod 600` env file via systemd `EnvironmentFile` and are never committed
 - [x] **OPS-02**: `ruff check .` passes clean
 - [x] **OPS-03**: `mypy src/` passes clean
-- [ ] **OPS-04**: `pytest` passes running only against saved fixtures — no live network calls in the suite
+- [x] **OPS-04**: `pytest` passes running only against saved fixtures — no live network calls in the suite
 - [ ] **OPS-05**: Tests cover idempotency — run the collector twice, assert row count unchanged
 - [ ] **OPS-06**: Tests cover normalisation — a saved fixture in produces the expected record out, for each source
 - [ ] **OPS-07**: Tests cover failure isolation — one source raises, the run still completes, the failure is logged
@@ -169,7 +169,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | OPS-01 | Phase 2: VPS & systemd | Pending |
 | OPS-02 | Phase 1: Skeleton | Complete |
 | OPS-03 | Phase 1: Skeleton | Complete |
-| OPS-04 | Phase 1: Skeleton | Pending |
+| OPS-04 | Phase 1: Skeleton | Complete |
 | OPS-05 | Phase 3: Collector Core & API Sources | Pending |
 | OPS-06 | Phase 3: Collector Core & API Sources | Pending |
 | OPS-07 | Phase 3: Collector Core & API Sources | Pending |
