@@ -71,8 +71,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Operations & Quality
 
 - [ ] **OPS-01**: Secrets load from a `chmod 600` env file via systemd `EnvironmentFile` and are never committed
-- [ ] **OPS-02**: `ruff check .` passes clean
-- [ ] **OPS-03**: `mypy src/` passes clean
+- [x] **OPS-02**: `ruff check .` passes clean
+- [x] **OPS-03**: `mypy src/` passes clean
 - [ ] **OPS-04**: `pytest` passes running only against saved fixtures — no live network calls in the suite
 - [ ] **OPS-05**: Tests cover idempotency — run the collector twice, assert row count unchanged
 - [ ] **OPS-06**: Tests cover normalisation — a saved fixture in produces the expected record out, for each source
@@ -167,8 +167,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | BOT-06 | Phase 6: Discord Bot | Pending |
 | BOT-07 | Phase 6: Discord Bot | Pending |
 | OPS-01 | Phase 2: VPS & systemd | Pending |
-| OPS-02 | Phase 1: Skeleton | Pending |
-| OPS-03 | Phase 1: Skeleton | Pending |
+| OPS-02 | Phase 1: Skeleton | Complete |
+| OPS-03 | Phase 1: Skeleton | Complete |
 | OPS-04 | Phase 1: Skeleton | Pending |
 | OPS-05 | Phase 3: Collector Core & API Sources | Pending |
 | OPS-06 | Phase 3: Collector Core & API Sources | Pending |
@@ -177,6 +177,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | OPS-09 | Phase 7: Reliability & Docs | Pending |
 
 **Coverage:**
+
 - v1 requirements: 45 total
 - Mapped to phases: 45
 - Unmapped: 0 — full coverage, no orphans, no duplicates
