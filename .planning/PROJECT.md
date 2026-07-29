@@ -14,7 +14,7 @@ It is intentionally small. It is a portfolio artifact for a Content Lab automati
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ `ruff check .`, `mypy src/`, and `pytest` all pass, with tests running against saved fixtures only — Phase 1 (OPS-02/03/04). The documented gate is four commands, not three: `ruff format --check .` leads. Proven on a genuine fresh clone, not just the development tree.
 
 ### Active
 
@@ -37,8 +37,7 @@ It is intentionally small. It is a portfolio artifact for a Content Lab automati
 - [ ] Discord `/creator` command returns a named creator's current numbers and trend
 - [ ] Discord `/status` command reports last run time, duration, and failure count
 - [ ] Secrets load from a `chmod 600` env file via systemd `EnvironmentFile`, never from the repo
-- [ ] `ruff check .`, `mypy src/`, and `pytest` all pass, with tests running against saved fixtures only
-- [ ] README with architecture diagram, presentable to a stranger
+- [ ] README with architecture diagram, presentable to a stranger *(Phase 1 shipped the README — install, gate, usage, `creators.yaml` shape. The architecture diagram is still outstanding.)*
 
 ### Out of Scope
 
@@ -96,7 +95,7 @@ Everything else the agent can draft: parsing, retries, logging, schema, tests, R
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Python 3.12 | Author's strongest language; Playwright and Sheets libraries are mature | — Pending |
+| Python 3.12 | Author's strongest language; Playwright and Sheets libraries are mature | ✓ Held — Phase 1. `requires-python = ">=3.12,<3.13"` bounds it so a mismatched venv fails at install rather than diverging at runtime |
 | SQLite over Postgres | One file, zero setup, real SQL. Postgres is overkill for a single machine | — Pending |
 | Database is source of truth, Sheet is a view | Gives history, dedup, and re-runnability; Sheet stays disposable | — Pending |
 | Official API first, Playwright only where none exists | YouTube and Twitch have free official APIs; TikTok does not. Knowing which tool fits is the judgment worth defending | — Pending |
@@ -105,13 +104,13 @@ Everything else the agent can draft: parsing, retries, logging, schema, tests, R
 | `gspread` with a service account, batch writes only | Cell-by-cell writes hit Sheets rate limits | — Pending |
 | `discord.py` bot as a separate systemd service | Long-lived process; must not share a lifecycle with the one-shot collector | — Pending |
 | Sheet layout: Dashboard + History tabs | Dashboard gives conditional formatting and an editable Status column for `onEdit`; History gives the demo something to scroll | — Pending |
-| `creators.yaml` for config | Adding a creator must never require a code change | — Pending |
+| `creators.yaml` for config | Adding a creator must never require a code change | ✓ Held — Phase 1. `load_creators` parses it with `yaml.safe_load`; three creators committed (xqc, pokimane, kaicenat), each spanning all three platforms. Handles are partly unverified by design — a wrong one surfaces as a Phase 3 API 404, not a Phase 1 failure |
 | pytest against saved HTML/JSON fixtures | Live pages in a test loop are slow, flaky, and get you blocked | — Pending |
 | LLM digest excluded entirely, not deferred | Needs a paid key; non-goals ban paid tiers. Excluding it from requirements stops it creeping back in | — Pending |
 | Unique constraint on `(creator_id, source, metric_date)` | Makes re-runs idempotent by construction rather than by application logic | — Pending |
 | Twitch metric is VOD view count + live status, not followers | `GET /helix/channels/followers` requires a broadcaster or moderator *user* token — app credentials are rejected even for total-only counts. No OAuth relationship exists with tracked creators, so follower count is an auth wall, not a scraping problem. `Get Videos` and `Get Streams` are app-token accessible. Documented in README as a design decision | — Pending |
 | Day-over-day delta computed on view count, not subscribers | YouTube rounds `subscriberCount` to 3 significant figures above 1k subs, so sub deltas are rounding noise. View counts are unrounded and move daily. Subscriber counts still shown, labelled coarse | — Pending |
-| No new dependencies beyond `requests` | Research closed all 8 open gaps against stdlib: hand-rolled retry over tenacity, dataclasses over pydantic, stdlib logging over structlog, gspread's own auth over google-api-python-client. `requests` is already transitive via gspread | — Pending |
+| No new dependencies beyond `requests` | Research closed all 8 open gaps against stdlib: hand-rolled retry over tenacity, dataclasses over pydantic, stdlib logging over structlog, gspread's own auth over google-api-python-client. `requests` is already transitive via gspread | ✓ Held — Phase 1. Exactly 8 packages, all exact-pinned. First pressure came immediately: mypy strict flagged `import yaml` because PyYAML ships no stubs. Resolved by adding `"yaml"` to the existing `ignore_missing_imports` override rather than installing `types-PyYAML` |
 | Host: DigitalOcean droplet, Singapore region, 2 GB | Needs a real VM with systemd — container platforms (Fly, Railway, Render) have no init system and Phase 2's whole deliverable is a systemd timer. Chose DO over Hetzner (better value, but new-account identity verification risks a day) and over EC2/Compute Engine (VPC/IAM setup is hours that teach nothing the interview examines). 2 GB gives Playwright headroom without fighting OOM; Singapore keeps SSH latency low from PH. Hourly billing means the build week costs ~$3. **Revisit if Content Lab turns out to be an AWS or GCP shop** — matching their stack would outweigh the setup tax, and AWS Lightsail is the low-friction way to say "it runs on AWS" | — Pending |
 
 ## Evolution
@@ -131,5 +130,19 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
+## Current State
+
+**Phase 1: Skeleton — complete (2026-07-30).** The repo has a shape and a gate. `creatorpulse` is an
+installable package with a `collect` subcommand that reads `creators.yaml`, logs a run, and exits 0;
+`sync` and `bot` are stubs that exit 3 until Phases 4 and 6. The four-command gate
+(`ruff format --check .`, `ruff check .`, `mypy src/`, `pytest`) is documented literally in the README
+and verified green on a fresh clone. The collector body itself is Phase 3.
+
+One tooling trap recorded for later: the `ruff` on the system PATH is 0.15.13 while the locked venv
+ruff is 0.16.0, and only 0.16 formats Python code blocks embedded in markdown. The two disagree about
+whether the repo is green. Always run the gate through the venv.
+
+Next: **Phase 2 — VPS & systemd** (human-built: provisioning, unit and timer files, secrets).
+
 ---
-*Last updated: 2026-07-29 after initialization*
+*Last updated: 2026-07-30 after Phase 1: Skeleton*
