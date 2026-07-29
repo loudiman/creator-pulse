@@ -1,0 +1,19 @@
+creators:
+  - id: xqc
+    name: xQc
+    sources:
+      youtube: "@xQcOW"
+      twitch: xqc
+      tiktok: "@xqc"
+  - id: pokimane
+    name: Pokimane
+    sources:
+      youtube: "@pokimane"
+      twitch: pokimane
+      tiktok: "@pokimane"
+  - id: kaicenat
+    name: Kai Cenat
+    sources:
+      youtube: "@KaiCenat"
+      twitch: kaicenat
+      tiktok: "@kaicenat"
