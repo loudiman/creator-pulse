@@ -67,7 +67,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `git status` is clean and `.gitignore` covers the env file, the SQLite database, the research cache, and Python artifacts — the author can confirm no secret path is trackable
   3. The repo has a `src/` package layout, a `pyproject.toml` pinning the locked dependency set, and a `creators.yaml` that is loadable but not yet consumed
   4. `journal.md` exists with a day-one entry
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Walking skeleton tracer: installed package → `creatorpulse collect` reads `creators.yaml`, logs a run, exits 0
+- [ ] 01-02-PLAN.md — The suite is real: one loader test, the fixture root, and the hand-run recorder
+- [ ] 01-03-PLAN.md — The gate is documented and green: README block, journal day-one entry, `.gitignore` extension
 
 Notes:
 - `.gitignore` already exists at the repo root and is committed. This phase **extends** it; it does not create it. Secrets must never reach git history — an un-commit is a rotation, not a fix.
@@ -245,7 +250,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Skeleton | 0/TBD | Not started | - |
+| 1. Skeleton | 0/3 | Not started | - |
 | 2. VPS & systemd | 0/TBD | Not started | - |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
