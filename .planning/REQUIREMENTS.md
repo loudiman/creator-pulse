@@ -36,7 +36,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **RUN-01**: One creator or one source failing does not abort the run — all remaining work still completes
 - [ ] **RUN-02**: Each failure is logged with creator, source, and cause, and counted in that run's `runs` row
 - [ ] **RUN-03**: The collector runs unattended on a daily systemd timer *(human-built: unit and timer files)*
-- [ ] **RUN-04**: Run output is readable after the fact via `journalctl -u <unit>`
+- [x] **RUN-04**: Run output is readable after the fact via `journalctl -u <unit>`
 - [ ] **RUN-05**: `metric_date` is computed once per run in UTC, so a run slipping past midnight cannot split one run across two dates
 
 ### Sheet
@@ -146,7 +146,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | RUN-01 | Phase 3: Collector Core & API Sources | Pending |
 | RUN-02 | Phase 3: Collector Core & API Sources | Pending |
 | RUN-03 | Phase 2: VPS & systemd | Pending |
-| RUN-04 | Phase 2: VPS & systemd | Pending |
+| RUN-04 | Phase 2: VPS & systemd | Complete |
 | RUN-05 | Phase 3: Collector Core & API Sources | Pending |
 | SHEET-01 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-02 | Phase 4: Playwright & Sheets | Pending |

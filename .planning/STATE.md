@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2
-current_phase_name: VPS & systemd
+current_phase: 02
+current_phase_name: vps-systemd
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-07-30T18:10:26.218Z"
-last_activity: 2026-07-30
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-07-30T19:13:07.196Z"
+last_activity: 2026-07-31
+last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** The unattended daily run — a timer fires, real numbers land in the database, the Sheet reflects them, and Discord says so, with no human in the loop.
-**Current focus:** Phase 01 — skeleton
+**Current focus:** Phase 02 — vps-systemd
 
 ## Current Position
 
-Phase: 2 — VPS & systemd
-Plan: Not started
+Phase: 02 (vps-systemd) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-30 — Phase 01 complete, transitioned to Phase 2
+Last activity: 2026-07-31 — Phase 02 execution started
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [██████████] 100%
 | Phase 01 P01 | 6min | 2 tasks | 5 files |
 | Phase 01 P02 | 4min | 2 tasks | 3 files |
 | Phase 01 P03 | 12min | 2 tasks | 5 files |
+| Phase 02-vps-systemd P01 | 20min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: record_fixture.py validates --source/--case against ^[a-z0-9_]+$ before any network call, then re-checks resolved-path containment as a second belt
 - [Phase ?]: recorder raises on non-2xx instead of saving the body, so a blocked/challenge response can never masquerade as a real fixture
 - [Phase ?]: Fixed ruff-format drift on ARCHITECTURE.md with ruff format . (real reformat), not a scope exclusion
+- [Phase ?]: resolve_paths(): empty-string env var treated as unset, not cwd; db_path logged only, never opened, in this phase
 
 ### Pending Todos
 
@@ -100,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-30T17:23:20.728Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-vps-systemd/02-CONTEXT.md
+Last session: 2026-07-30T19:13:01.762Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

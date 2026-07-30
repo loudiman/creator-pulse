@@ -107,12 +107,12 @@ Notes:
   4. The timer survives a reboot and, with `Persistent=true`, catches up a missed run
   5. The author can explain out loud, without notes, why systemd timer beats cron here
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Tracer: a run announces which config and which database it used; plus `.env.example` and the `02-UAT.md` proof scaffold
+- [x] 02-01-PLAN.md — Tracer: a run announces which config and which database it used; plus `.env.example` and the `02-UAT.md` proof scaffold
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -301,7 +301,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
-| 2. VPS & systemd | 0/3 | Planned | - |
+| 2. VPS & systemd | 1/3 | In Progress|  |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
 | 5. Apps Script | 0/TBD | Not started | - |
