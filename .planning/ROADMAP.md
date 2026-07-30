@@ -96,7 +96,7 @@ Notes:
 
 **Goal**: A rented Linux box runs scheduled work unattended, logs it, and holds secrets the repo never sees
 **Mode:** mvp
-**Owner:** human
+**Owner:** mixed *(changed from `human` by D-01 — the agent writes environment-variable path resolution in `src/creatorpulse/` and nothing else; the unit, the timer, UFW, SSH, and `docs/deploy.md` stay human-built)*
 **Depends on**: Phase 1
 **Requirements**: RUN-03, RUN-04, OPS-01
 **Success Criteria** (what must be TRUE):
@@ -107,7 +107,20 @@ Notes:
   4. The timer survives a reboot and, with `Persistent=true`, catches up a missed run
   5. The author can explain out loud, without notes, why systemd timer beats cron here
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Tracer: a run announces which config and which database it used; plus `.env.example` and the `02-UAT.md` proof scaffold
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — The author provisions the box and starts the service; the agent proves git history never saw a secret (criteria 2, 3)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — The timer fires unattended and catches up across a reboot; `02-UAT.md` closed (criteria 1, 4, 5)
 
 Notes:
 
@@ -288,7 +301,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
-| 2. VPS & systemd | 0/TBD | Not started | - |
+| 2. VPS & systemd | 0/3 | Planned | - |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
 | 5. Apps Script | 0/TBD | Not started | - |
