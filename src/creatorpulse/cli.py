@@ -6,7 +6,7 @@ import sys
 import time
 from pathlib import Path
 
-from creatorpulse.config import DEFAULT_CONFIG_PATH, load_creators
+from creatorpulse.config import load_creators, resolve_paths
 
 logger = logging.getLogger("creatorpulse")
 
@@ -19,9 +19,9 @@ def configure_logging() -> None:
     )
 
 
-def run_collect(config_path: Path) -> int:
+def run_collect(config_path: Path, db_path: Path) -> int:
     start = time.monotonic()
-    logger.info("Starting collect run using config %s", config_path)
+    logger.info("Starting collect run using config %s, database %s", config_path, db_path)
     if not config_path.exists():
         logger.error("Config file not found: %s", config_path)
         return 1
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     collect_parser = subparsers.add_parser("collect")
-    collect_parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    collect_parser.add_argument("--config", type=Path, default=None)
 
     subparsers.add_parser("sync")
     subparsers.add_parser("bot")
@@ -48,7 +48,10 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging()
 
     if args.command == "collect":
-        return run_collect(args.config)
+        config_path, db_path = resolve_paths()
+        if args.config is not None:
+            config_path = args.config.resolve()
+        return run_collect(config_path, db_path)
     if args.command == "sync":
         logger.warning("sync is not implemented yet; Phase 4 fills it in")
         return 3
