@@ -81,6 +81,14 @@ result: pending
 
 evidence: |
 
+## Decisions
+
+### Task 1: Database location confirmed (02-02-PLAN.md)
+
+Decision: `confirm-var-lib`. D-05 stands as written — `/var/lib/creatorpulse/creatorpulse.db`, owned
+by the service user, outside the repository. No change. Recorded here because this was the last free
+moment to move it (see 02-02-PLAN.md Task 1, 02-CONTEXT.md D-05).
+
 ## Summary
 
 total: 5
