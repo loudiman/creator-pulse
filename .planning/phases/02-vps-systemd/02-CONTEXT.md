@@ -199,8 +199,11 @@ empty payload; Phase 3 fills it.
   conflicts with the generated sections below it in the same file. **D-01 narrows the one exception;
   it does not widen it.**
 - `.planning/PROJECT.md` — constraints, the three human-built components, and the Key Decisions table
-  including the host decision (DigitalOcean droplet, Singapore, 2 GB, chosen because container
+  including the host decision (DigitalOcean droplet, Singapore, 1 GB, chosen because container
   platforms have no init system and this phase's whole deliverable is a systemd timer).
+  **Revised during Phase 2 execution:** the size dropped 2 GB → 1 GB (`s-1vcpu-1gb`, 25 GB disk)
+  before provisioning. The 2 GB only ever bought Playwright/Chromium headroom, and Playwright is
+  cut item 2. See PROJECT.md's Key Decisions row for the full rationale and the resize tripwire.
 - `.gitignore` — already covers `.env`, `*.env`, `service-account*.json`, `*.db`/`-wal`/`-shm`, and
   carries the `!.env.example` negation D-14 relies on.
 
@@ -309,7 +312,9 @@ empty payload; Phase 3 fills it.
 choices; the researcher may surface options, and the author closes them during the afternoon:
 
 - Swap file size (the roadmap calls for one as insurance against Phase 4 Playwright OOM; the droplet
-  is 2 GB, so 1–2 GB is the plausible range).
+  is 1 GB, so 1–2 GB is the plausible range). The size-down to 1 GB raises the stakes here: swap is
+  what converts an OOM *kill* into a merely slow run, and slow is survivable for an unattended job
+  that nobody watches. Provision it whether or not Playwright survives the cut.
 - UFW rule set and SSH hardening specifics — which ports, key-only authentication, root login policy,
   whether the SSH port moves.
 - Whether the venv sits at `.venv` inside the repo or beside it (D-02 assumes inside; nothing depends
