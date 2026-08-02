@@ -146,7 +146,43 @@ evidence: |
 
   ---
   source: agent-executed, repo-side git-history proof (Task 3, run from dev box against full history)
-  <!-- populated by Task 3 -->
+
+  `git ls-files | grep -E '(^|/)\.env$|\.env$|service-account.*\.json$|credentials.*\.json$|token.*\.json$'`:
+  ```
+  (no output — pattern does not match .env.example, and no other env/service-account/credentials/token
+  file is tracked)
+  ```
+
+  `git log --all --diff-filter=A --name-only` filtered to the same patterns:
+  ```
+  (no output — no such path was ever added, on any branch)
+  ```
+
+  `git log --all -S<NAME> --oneline` for each of the six `.env.example` variable names:
+  ```
+  YOUTUBE_API_KEY, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, DISCORD_BOT_TOKEN, DISCORD_WEBHOOK_URL,
+  GOOGLE_SERVICE_ACCOUNT_FILE — each hits exactly 2 commits, not 1:
+    19397fd docs(02-01): add .env.example and 02-UAT.md proof scaffold   (.env.example, blank value)
+    8f3a57e docs(02): create phase plan                                  (02-01-PLAN.md prose naming
+                                                                          the variable, blank value)
+  ```
+  Neither commit contains an actual secret value — verified by reading `8f3a57e`'s diff: it names the
+  variable in an acceptance-criteria bullet (`grep -c 'YOUTUBE_API_KEY=' .env.example` returns 1) and in
+  a table row, never assigning it a value.
+
+  CRITERION-WORDING MISMATCH (recorded, not papered over): this plan's Task 3 acceptance criteria state
+  `git log --all -S<NAME> --oneline` should return "at most the single commit that introduced
+  `.env.example`". The true count is 2 commits per variable, both blank-valued prose, because the
+  criterion's wording did not anticipate the plan file (`8f3a57e`) also naming the variables. This is a
+  wording gap in the criterion, not a leaked secret — no commit anywhere assigns any of the six
+  variables an actual value.
+
+  Cross-check against entry 2: the pasted `systemctl start` run-start line names
+  `database /var/lib/creatorpulse/creatorpulse.db` — under `/var/lib/creatorpulse` per D-05, not the
+  repo-relative fallback `creatorpulse.db` — confirming the unit's `Environment=` lines are what's in
+  effect, not `resolve_paths()`'s default.
+
+  Green gate at time of this check: `ruff check .` exit 0, `mypy src/` exit 0, `pytest` 6 passed.
 
 ### 4. The timer survives a reboot and, with `Persistent=true`, catches up a missed run
 
@@ -196,3 +232,10 @@ passed: 2
 pending: 3
 
 ## Gaps
+
+- **Not a blocking gap — recorded for visibility.** Task 3's acceptance criteria wording ("at most the
+  single commit that introduced `.env.example`") undercounts by one commit for each of the six
+  `.env.example` variable names: the true count is 2 (`.env.example` itself, plus `02-01-PLAN.md`
+  naming the variables in prose). Both are blank-valued; no secret value exists in history. Entry 3
+  remains `result: pass` — this is a criterion-wording gap, not a security gap. See entry 3's
+  agent-executed evidence block for the full detail.
