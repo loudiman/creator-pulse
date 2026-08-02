@@ -205,9 +205,41 @@ expected: A written answer in the author's own words, no command output.
 
 why_human: This is a spoken-explanation criterion by definition; no automated check applies.
 
-result: pending
+result: pass
 
 evidence: |
+  Author's answer, given from memory without notes, transcribed verbatim and unedited
+  (2026-08-03):
+
+  > systemd beats cron here becaust its modern and timezone-aware and it has a catch-up
+  > mechanism which is Persistent= where setting it true means if server ever fails or
+  > offline it will run the missed job once server is back online or done booting up
+
+  Assessment (orchestrator, not the author):
+
+  - "timezone-aware" — CORRECT, and demonstrated by this phase's own evidence. `OnCalendar`
+    accepts a timezone qualifier; cron uses the system timezone, and `CRON_TZ` is not
+    portable across implementations. Entry 4 records the side-by-side proof: the unqualified
+    form resolves to 08:00 UTC (16:00 PHT, wrong), the `Asia/Manila`-qualified form to
+    00:00 UTC (08:00 PHT, correct).
+  - "Persistent= catch-up" — CORRECT. cron skips missed runs entirely, with nothing to
+    configure. (anacron does catch-up, but is a separate tool at day granularity, not a cron
+    feature.) The author's phrasing "the missed job" is accurate: one fire on next boot, not
+    one per missed window — the property entry 4 proves by deliberately missing a window.
+  - "modern" — WEAK. Not an argument, and invites a follow-up question. Flagged to the author
+    as the one part to drop before the interview.
+  - Arguments available but not cited: journald capture (`journalctl -u` with unit tagging,
+    priority filtering and automatic rotation, requiring no configuration in the unit —
+    versus a self-managed redirect under cron; ROADMAP already names "no structured logs" as
+    cron's weakness); dependency ordering via `After=` (no cron equivalent — cron fires at a
+    wall-clock time regardless of system readiness); and service/timer separation, which is
+    what allowed `systemctl start` to test the job by hand without waiting for the schedule
+    (entry 2) where cron would require reproducing the command and its environment — Pitfall A.
+
+  Criterion asks whether the author can explain the choice unaided. Two of three cited points
+  are correct and evidence-backed; one is filler. Recorded as pass, with the weak point and
+  the uncited arguments noted so the author can tighten the answer before the interview.
+  No model answer was supplied — the gaps above are named, not phrased for recitation.
 
 ## Decisions
 
