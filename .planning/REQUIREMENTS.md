@@ -70,7 +70,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Operations & Quality
 
-- [ ] **OPS-01**: Secrets load from a `chmod 600` env file via systemd `EnvironmentFile` and are never committed
+- [x] **OPS-01**: Secrets load from a `chmod 600` env file via systemd `EnvironmentFile` and are never committed
 - [x] **OPS-02**: `ruff check .` passes clean
 - [x] **OPS-03**: `mypy src/` passes clean
 - [x] **OPS-04**: `pytest` passes running only against saved fixtures — no live network calls in the suite
@@ -166,7 +166,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | BOT-05 | Phase 6: Discord Bot | Pending |
 | BOT-06 | Phase 6: Discord Bot | Pending |
 | BOT-07 | Phase 6: Discord Bot | Pending |
-| OPS-01 | Phase 2: VPS & systemd | Pending |
+| OPS-01 | Phase 2: VPS & systemd | Complete |
 | OPS-02 | Phase 1: Skeleton | Complete |
 | OPS-03 | Phase 1: Skeleton | Complete |
 | OPS-04 | Phase 1: Skeleton | Complete |

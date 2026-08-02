@@ -107,7 +107,7 @@ Notes:
   4. The timer survives a reboot and, with `Persistent=true`, catches up a missed run
   5. The author can explain out loud, without notes, why systemd timer beats cron here
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -116,7 +116,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — The author provisions the box and starts the service; the agent proves git history never saw a secret (criteria 2, 3)
+- [x] 02-02-PLAN.md — The author provisions the box and starts the service; the agent proves git history never saw a secret (criteria 2, 3)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -301,7 +301,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
-| 2. VPS & systemd | 1/3 | In Progress|  |
+| 2. VPS & systemd | 2/3 | In Progress|  |
 | 3. Collector Core & API Sources | 0/TBD | Not started | - |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
 | 5. Apps Script | 0/TBD | Not started | - |
