@@ -22,9 +22,52 @@ Commands whose output belongs in the evidence block:
 - `systemctl list-timers creatorpulse.timer`
 - `journalctl -u creatorpulse.service`
 
-result: pending
+result: pass
 
 evidence: |
+  source: author-pasted, droplet. Timer armed the previous evening; fired overnight with nobody
+  logged in.
+
+  `systemctl list-timers creatorpulse.timer`:
+  ```
+  $ systemctl list-timers creatorpulse.timer
+  NEXT                        LEFT LAST                           PASSED UNIT               ACTIVATES
+  Tue 2026-08-04 00:00:00 UTC  23h Mon 2026-08-03 00:00:10 UTC 25min ago creatorpulse.timer creatorpulse.service
+  ```
+
+  `journalctl -u creatorpulse.service --no-pager -n 20`:
+  ```
+  Aug 03 00:00:11 creatorpulse-vps creatorpulse[13392]: 2026-08-03 00:00:11,069 INFO creatorpulse: Starting collect run using config /home/creatorpulse/creator-pulse/creators.yaml, database /var/lib/creatorpulse/creatorpulse.db
+  Aug 03 00:00:11 creatorpulse-vps creatorpulse[13392]: 2026-08-03 00:00:11,075 INFO creatorpulse: Loaded 3 creators
+  Aug 03 00:00:11 creatorpulse-vps creatorpulse[13392]: 2026-08-03 00:00:11,075 WARNING creatorpulse: Collector body is not implemented yet; Phase 3 fills it in
+  Aug 03 00:00:11 creatorpulse-vps creatorpulse[13392]: 2026-08-03 00:00:11,076 INFO creatorpulse: Run complete in 0.01 seconds
+  ```
+
+  PID 13392 is distinct from the two manual `systemctl start` runs on Aug 02 (PIDs 11545, 11612)
+  already recorded in entry 2 — this is a fire nobody triggered.
+
+  `journalctl -u creatorpulse.timer` returns `-- No entries --`. Correct and expected: a timer unit
+  logs its own start/stop, not each activation — activation evidence is `LAST`/`PASSED` in
+  `list-timers` plus the service run above.
+
+  Judgement (agent-executed): `NEXT` (`Tue 2026-08-04 00:00:00 UTC`) is an exact timestamp, not a
+  five-minute range — confirms D-10's declined `RandomizedDelaySec` is in fact absent from the
+  running unit, not just the intent. The run-start line's resolved paths
+  (`/home/creatorpulse/creator-pulse/creators.yaml`, `/var/lib/creatorpulse/creatorpulse.db`) match
+  entry 3's `Environment=` lines, not the repo-relative fallback — same code path entry 2 exercised
+  by hand, this time fired by the timer alone.
+
+  FINDING — `AccuracySec`, not drift: timer scheduled `00:00:00`, service logged `00:00:11,069`, an
+  ~11s gap. This is systemd's default `AccuracySec=1min` batching timer wakeups for power
+  efficiency, distinct from `RandomizedDelaySec` jitter (which the exact, range-free `NEXT` above
+  already rules out, and which D-10 declined). `AccuracySec=1s` would tighten it; unnecessary for a
+  once-daily job.
+
+limitation: |
+  This run executed Phase 1's placeholder `collect` (the "Collector body is not implemented yet"
+  line) — RUN-03 (a timer firing unattended) is proven here; it only fully closes in Phase 3, when
+  the real collector is wired and an unattended fire produces real rows rather than four placeholder
+  log lines. This is the roadmap's own note, not a gap introduced here.
 
 ### 2. `systemctl start <unit>` succeeds against the same code path that works interactively — proving the stripped systemd environment (PATH, HOME, cwd) has been handled, not dodged
 
@@ -195,9 +238,137 @@ Commands whose output belongs in the evidence block:
 - `systemd-analyze calendar 'Mon..Sun *-*-* 08:00:00 Asia/Manila'`
 - `journalctl -u creatorpulse.service` (from the shifted-window reboot, showing exactly one catch-up run)
 
-result: pending
+result: pass
 
 evidence: |
+  source: author-pasted, droplet.
+
+  Part A — schedule verification, unqualified vs. `Asia/Manila`-qualified:
+  ```
+  $ systemd-analyze calendar 'Mon..Sun *-*-* 08:00:00'
+    Original form: Mon..Sun *-*-* 08:00:00
+  Normalized form: *-*-* 08:00:00
+      Next elapse: Mon 2026-08-03 08:00:00 UTC
+         From now: 15h left
+
+  $ systemd-analyze calendar 'Mon..Sun *-*-* 08:00:00 Asia/Manila'
+    Original form: Mon..Sun *-*-* 08:00:00 Asia/Manila
+  Normalized form: *-*-* 08:00:00 Asia/Manila
+      Next elapse: Mon 2026-08-03 00:00:00 UTC
+         From now: 7h left
+  ```
+  Side by side, the timezone qualifier is load-bearing: unqualified resolves to 08:00 UTC (16:00
+  PHT, wrong); `Asia/Manila`-qualified resolves to 00:00 UTC (08:00 PHT, D-09's intended alignment).
+  `Asia/Manila` resolving rather than erroring also retires research assumption A2 — `tzdata` is
+  present on the DigitalOcean Ubuntu 24.04 image.
+
+  Part B — reboot across a shifted fire window, `Persistent=true` catch-up. Two attempts, both
+  recorded.
+
+  Attempt 1 — margin shorter than boot time, diagnosed rather than assumed:
+  ```
+  Timer shifted to 00:35:00, confirmed armed:
+  $ systemctl list-timers creatorpulse.timer
+  NEXT                            LEFT LAST                           PASSED UNIT
+  Mon 2026-08-03 00:35:00 UTC 1min 58s Mon 2026-08-03 00:00:10 UTC 32min ago creatorpulse.timer
+
+  $ sudo poweroff        # 00:33:44
+
+  $ uptime -s
+  2026-08-03 00:34:37
+
+  $ journalctl --list-boots | tail -5
+  IDX BOOT ID                          FIRST ENTRY                 LAST ENTRY
+   -1 7b110b7fb8d240739883cfb4568f1082 Sat 2026-08-01 18:07:16 UTC Mon 2026-08-03 00:33:45 UTC
+    0 77643ad7c81a430089aeb645ebd9b61f Mon 2026-08-03 00:34:55 UTC Mon 2026-08-03 00:35:45 UTC
+  ```
+  Down `00:33:45` → `00:34:37` = 52 seconds, against a 76-second margin. The droplet booted 23
+  seconds before the `00:35:00` window, so no window was missed and no catch-up was owed. The timer
+  then fired normally at `00:35:03` (visible in the journal below, boot `77643ad7`). `Persistent=`
+  behaved correctly by doing nothing — a true negative, not a defect.
+
+  Attempt 2 — wider margin:
+  ```
+  Timer shifted to 17:28:00.
+
+  $ journalctl --list-boots | tail -5
+  IDX BOOT ID                          FIRST ENTRY                 LAST ENTRY
+   -2 7b110b7fb8d240739883cfb4568f1082 Sat 2026-08-01 18:07:16 UTC Mon 2026-08-03 00:33:45 UTC
+   -1 77643ad7c81a430089aeb645ebd9b61f Mon 2026-08-03 00:34:55 UTC Mon 2026-08-03 17:17:56 UTC
+    0 392fddeb386a4f418a1cf98d58a32e92 Mon 2026-08-03 17:36:18 UTC Mon 2026-08-03 17:39:19 UTC
+
+  $ systemctl list-timers creatorpulse.timer
+  NEXT                        LEFT LAST                              PASSED UNIT
+  Tue 2026-08-04 17:28:00 UTC  23h Mon 2026-08-03 17:36:14 UTC 3min 13s ago creatorpulse.timer
+
+  $ journalctl -u creatorpulse.service --no-pager -n 40
+  -- Boot 77643ad7c81a430089aeb645ebd9b61f --
+  Aug 03 00:35:03 creatorpulse-vps creatorpulse[1084]: 2026-08-03 00:35:03,086 INFO creatorpulse: Starting collect run using config /home/creatorpulse/creator-pulse/creators.yaml, database /var/lib/creatorpulse/creatorpulse.db
+  Aug 03 00:35:03 creatorpulse-vps creatorpulse[1084]: 2026-08-03 00:35:03,091 INFO creatorpulse: Loaded 3 creators
+  Aug 03 00:35:03 creatorpulse-vps creatorpulse[1084]: 2026-08-03 00:35:03,091 WARNING creatorpulse: Collector body is not implemented yet; Phase 3 fills it in
+  Aug 03 00:35:03 creatorpulse-vps creatorpulse[1084]: 2026-08-03 00:35:03,091 INFO creatorpulse: Run complete in 0.01 seconds
+  -- Boot 392fddeb386a4f418a1cf98d58a32e92 --
+  Aug 03 17:36:18 creatorpulse-vps creatorpulse[769]: 2026-08-03 17:36:18,210 INFO creatorpulse: Starting collect run using config /home/creatorpulse/creator-pulse/creators.yaml, database /var/lib/creatorpulse/creatorpulse.db
+  Aug 03 17:36:18 creatorpulse-vps creatorpulse[769]: 2026-08-03 17:36:18,255 INFO creatorpulse: Loaded 3 creators
+  Aug 03 17:36:18 creatorpulse-vps creatorpulse[769]: 2026-08-03 17:36:18,256 WARNING creatorpulse: Collector body is not implemented yet; Phase 3 fills it in
+  Aug 03 17:36:18 creatorpulse-vps creatorpulse[769]: 2026-08-03 17:36:18,265 INFO creatorpulse: Run complete in 0.06 seconds
+  ```
+  Timeline: powered off `17:17:56` → window at `17:28:00` passed while down → booted `17:36:18`,
+  eight minutes after the window. Catch-up fired at `17:36:14` (timer) / `17:36:18` (service), 24
+  seconds after boot, at a time with no scheduled window. Exactly one run, not one per missed
+  occurrence — the specific claim D-11 and RESEARCH.md Pitfall C make. Down ~18 minutes with the
+  window squarely inside.
+
+  The `00:35:03` run under boot `77643ad7` is attempt 1's normal on-time fire, not a catch-up.
+
+  Judgement (agent-executed): across both attempts, the reboot journal never shows more than one
+  catch-up run for a missed window — attempt 1 correctly shows zero (window not actually missed),
+  attempt 2 shows exactly one. This matches `Persistent=`'s documented single-fire-on-next-
+  opportunity behaviour; the paste does not describe or claim "one run per missed occurrence", so
+  no correction to the wording was needed.
+
+  Part C — schedule restored, verified against the loaded unit (not just the calendar string):
+  ```
+  $ systemctl cat creatorpulse.timer
+  # /etc/systemd/system/creatorpulse.timer
+  [Unit]
+  Description=CreatorPulse Daily Schedule (08:00 Asia/Manila)
+
+  [Timer]
+  OnCalendar=*-*-* 08:00:00 Asia/Manila
+  Persistent=true
+
+  [Install]
+  WantedBy=timers.target
+
+  $ systemctl list-timers creatorpulse.timer
+  NEXT                        LEFT LAST                          PASSED UNIT               ACTIVATES
+  Tue 2026-08-04 00:00:00 UTC   6h Mon 2026-08-03 17:36:14 UTC 5min ago creatorpulse.timer creatorpulse.service
+  ```
+  `NEXT` is `00:00:00 UTC` = 08:00 Asia/Manila, matching part A's qualified elapse.
+
+  FINDING — a gap in the verification method itself, not in the restoration: after attempt 2, the
+  schedule was first re-checked with `systemd-analyze calendar '*-*-* 08:00:00 Asia/Manila'`, which
+  reported the correct next elapse — but the unit still held the test value
+  `OnCalendar=*-*-* 17:28:00` (unqualified, therefore UTC) at that point. `systemd-analyze calendar`
+  validates a calendar expression given on the command line; it never reads the unit file. Only
+  `systemctl cat` and `systemctl list-timers`, above, show what is actually loaded. The stale
+  schedule was caught, corrected, and re-verified against the unit (Part C). Worth recording because
+  D-11's own wording ("re-check with `systemd-analyze calendar`") is insufficient on its own for
+  this step — a gap in the project's own procedure, not an execution mistake here, since the unit
+  was in fact corrected before this entry was written.
+
+  FINDING — the reboot test has a real failure mode: a margin shorter than droplet boot time proves
+  nothing, since the box returns before the window and no catch-up is owed — the absence of a run
+  then looks identical to a broken `Persistent=`. DigitalOcean droplets boot in well under a minute.
+  Attempt 1's 76-second margin against 52 seconds of actual downtime produced exactly this true
+  negative, diagnosed via `uptime -s` and `journalctl --list-boots` rather than mistaken for a
+  failure. Recording both attempts, not just the passing one, is deliberate.
+
+  NOTE: during the stale-schedule window described above, `systemctl cat` briefly showed a
+  `Description=` line ("08:00 Asia/Manila") inconsistent with the then-current
+  `OnCalendar=*-*-* 17:28:00` test value. Resolved when the schedule was restored (Part C). Recorded
+  as an observation on the human-built unit, not acted on — the unit is not edited by the agent.
 
 ### 5. The author can explain out loud, without notes, why systemd timer beats cron here
 
