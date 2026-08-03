@@ -116,6 +116,17 @@ Apps Script.
   archives, and the project rule reserves NULL for "the platform does not expose this metric".
   — **Reversibility:** reversible.
 
+- **D-17:** The Twitch app access token is **minted fresh on every run**. There is no cache file, no
+  expiry tracking, and no persisted token. `POST https://id.twitch.tv/oauth2/token` with
+  `grant_type=client_credentials` is one cheap call, and the token lives about 58 days with no refresh
+  token, so a cache would hold state that exists only to avoid a call the run makes once a day anyway.
+  A cache also has a failure mode a fresh mint cannot have: a stored token that expired between runs
+  produces a 401 that the narrow retry list of D-13 does not retry, and the whole Twitch source then
+  fails until someone deletes a file. STACK.md §8 recommends this same approach for a daily job.
+  Phase 7 criterion 5 exercises the mint path on interview morning, and with a fresh mint per run
+  every run already exercises it.
+  — **Reversibility:** reversible.
+
 ### Config Validation & Unimplemented Sources
 
 - **D-09:** Two lists, not one. A **known-platforms** list holds `youtube`, `twitch`, and `tiktok`.
@@ -196,6 +207,32 @@ Apps Script.
   a dead timer. *(Claude's call — the author chose "you decide".)*
   — **Reversibility:** reversible.
 
+### Proof of Done
+
+- **D-18:** The deliberate source failure of criterion 3 is induced by a **bogus handle** in a
+  temporary `creators.yaml` — a fourth entry with a real `id`, a real platform key, and an identifier
+  that does not exist. The author runs one collection with that file, pastes the journal output, then
+  reverts the file. This is the honest proof, because it changes no code and no key: the same code path
+  the timer runs meets a real API response that carries no channel. The OPS-07 unit test still
+  monkeypatches a fetcher to raise, so the two proofs stay distinct — the test proves the orchestrator
+  isolates an exception, and the manual gate proves a real bad input reaches the same place.
+  **Implementation consequence, and it is load-bearing:** a bogus handle does **not** return 404.
+  YouTube `channels.list` returns HTTP 200 with an empty `items` list, and Twitch `Get Users` returns
+  HTTP 200 with an empty `data` array. Each source must therefore **raise** on an empty result set. An
+  empty result is "no such channel", which is not the same thing as D-03's absent metric and must not
+  map to a row of NULLs. Without this, the deliberate failure would be recorded as a success and
+  criterion 3 could not be demonstrated at all.
+  — **Reversibility:** reversible.
+
+- **D-19:** `03-UAT.md` follows the `02-UAT.md` pattern exactly: one pasted command output per success
+  criterion, five entries, no screenshots. Pasted output is greppable and diffable, and it can be
+  re-checked days later, which a picture cannot. Criterion 2 needs one `sqlite3` query that shows the
+  unchanged total row count and yesterday's untouched rows at the same time, so the author can see
+  both facts in one output as the criterion words it. Criterion 3 pastes the D-18 run. Criterion 4
+  pastes a query proving the Twitch `followers` column is NULL on every row. Criterion 5 pastes the
+  `runs` row and one concurrent read taken while the collector writes.
+  — **Reversibility:** reversible.
+
 ### Claude's Discretion
 
 - Whether the record lives in a new `models.py` or beside `Creator` in `config.py`. ARCHITECTURE.md
@@ -214,10 +251,6 @@ Apps Script.
   returns `statistics` in the same 1-unit call. Twitch needs `GET /helix/users?login=` for the numeric
   `user_id` that Get Videos and Get Streams require. The per-run call budget is therefore three
   YouTube calls and ten Twitch calls, including one token mint.
-- Whether the Twitch app access token is minted once per run or cached with its expiry. STACK.md
-  favours one fresh mint per run for a daily job, because the token lives about 58 days with no
-  refresh token and re-requesting is one cheap call. Phase 7 must exercise the mint path deliberately
-  either way (its criterion 5).
 - Test file names and fixture case names, within the `tests/fixtures/{source}/{case}.json` layout
   Phase 1 D-15 fixed.
 
@@ -385,17 +418,10 @@ Apps Script.
   `videos_empty.json` for D-08.
 - Keep the YouTube call to one request per creator with `part=statistics&forHandle=@handle`. A
   separate resolution call would double the quota cost for no benefit.
-
-**Open at the time of writing — not decided, and recorded so the researcher can surface options:**
-
-- **How the deliberate source failure of criterion 3 is induced.** The OPS-07 test can monkeypatch a
-  fetcher to raise. The live manual gate needs a second method — a bogus handle in a temporary
-  `creators.yaml`, or an emptied API key for one run. The two are different proofs and the phase
-  needs both.
-- **What `03-UAT.md` pastes for each of the five criteria.** Phase 2 D-15 set the pattern of one
-  pasted command output per criterion, and `02-UAT.md` is the model to follow. Criterion 2 needs a
-  single `sqlite3` query that shows the unchanged row count and yesterday's untouched rows at the
-  same time.
+- Record an `channel_not_found.json` fixture and a `users_not_found.json` fixture — each an HTTP 200
+  body with an empty result set. They are what D-18's raise-on-empty rule is tested against, and they
+  are cheap to record with `scripts/record_fixture.py` against a handle that does not exist.
+- Nothing is left open. Every question raised during this discussion is closed by a decision above.
 
 </specifics>
 

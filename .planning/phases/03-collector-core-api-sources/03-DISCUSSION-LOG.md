@@ -234,8 +234,24 @@ CONTEXT.md with its rationale: D-02, D-04, D-06, D-10, D-11, D-12, D-13, D-14, D
 Genuine open discretion, recorded in CONTEXT.md §"Claude's Discretion": module placement of the record
 type, DDL column order, `collected_at` per row against per run, the validation exit code and message
 wording, log line wording and level, the retry helper's form and location, the Python type of
-`is_live`, identifier resolution and the per-run call budget, Twitch token minting against caching,
-and test and fixture file names.
+`is_live`, identifier resolution and the per-run call budget, and test and fixture file names.
+
+## Follow-up round — the three items left open at first write
+
+The author closed all three in one reply, and they became D-17, D-18, and D-19 in CONTEXT.md.
+
+| Question | Answer |
+|----------|--------|
+| Twitch token: fresh mint each run, or cache with expiry? | **Fresh mint each run.** No cache file and no expiry tracking. A stale cached token would produce a 401, which the narrow retry list does not retry, so the source would stay broken until someone deleted a file. |
+| Failure injection for criterion 3: bogus handle, or emptied key? | **Bogus handle** in a temporary `creators.yaml`. It changes no code and no key, so the timer's own code path meets a real response carrying no channel. The OPS-07 test keeps its monkeypatched raise, so the two proofs stay distinct. |
+| `03-UAT.md`: same one-paste-per-criterion pattern as `02-UAT.md`? | **Yes.** Five entries, pasted command output, no screenshots. |
+
+**Consequence surfaced while recording D-18, and it is load-bearing.** A bogus handle does not return
+404. YouTube `channels.list` returns HTTP 200 with an empty `items` list, and Twitch `Get Users`
+returns HTTP 200 with an empty `data` array. Each source must therefore raise on an empty result set.
+An empty result means "no such channel", which is not D-03's absent metric and must not become a row
+of NULLs. Without that rule the deliberate failure would be recorded as a success, and criterion 3
+could not be demonstrated at all.
 
 ## Deferred Ideas
 
@@ -248,6 +264,5 @@ and test and fixture file names.
 - Rolling averages and trends, V2-DATA-01; historical backfill, V2-DATA-02; `journalctl` priority
   mapping, V2-OPS-01.
 
-Two items were left explicitly open rather than deferred, and are recorded in CONTEXT.md §Specifics:
-how the deliberate source failure of criterion 3 is induced, and what `03-UAT.md` pastes for each of
-the five criteria.
+Nothing is left open. The three items that were open at first write are closed above as D-17, D-18,
+and D-19.
