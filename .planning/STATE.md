@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 02
 current_phase_name: vps-systemd
-status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-08-02T16:46:08.591Z"
+status: verifying
+stopped_at: Completed 02-03-PLAN.md — Phase 2 done
+last_updated: "2026-08-03T17:47:21.662Z"
 last_activity: 2026-07-31
 last_activity_desc: Phase 02 execution started
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 Phase: 02 (vps-systemd) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-31 — Phase 02 execution started
 
-Progress: [████████░░] 83%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [████████░░] 83%
 | Phase 01 P03 | 12min | 2 tasks | 5 files |
 | Phase 02-vps-systemd P01 | 20min | 2 tasks | 5 files |
 | Phase 02-vps-systemd P02 | 25min | 3 tasks | 1 files |
+| Phase 02-vps-systemd P03 | 20min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: Fixed ruff-format drift on ARCHITECTURE.md with ruff format . (real reformat), not a scope exclusion
 - [Phase ?]: resolve_paths(): empty-string env var treated as unset, not cwd; db_path logged only, never opened, in this phase
 - [Phase ?]: D-05 confirmed unchanged (Task 1); criterion-wording gap recorded: git log -S per .env.example variable hits 2 commits not 1 (plan-file prose also names vars, blank-valued) — wording gap, not a leak; D-03 private-repo deviation resolved by author before clone
+- [Phase ?]: Entry 1 limitation: RUN-03 partial closure — timer proven unattended, real collector output waits for Phase 3
+- [Phase ?]: Reboot catch-up: both attempts recorded (diagnosed true-negative + passing catch-up), not just the pass — margin-vs-boot-time is a real reboot-test failure mode
+- [Phase ?]: systemd-analyze calendar validates a CLI string, not the loaded unit — stale test schedule caught and corrected via systemctl cat before entry 4 closed
 
 ### Pending Todos
 
@@ -104,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-02T16:46:08.566Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-08-03T17:47:21.638Z
+Stopped at: Completed 02-03-PLAN.md — Phase 2 done
 Resume file: None
