@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Collector Core & API Sources
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-08-04T15:45:28.701Z"
-last_activity: 2026-08-04
-last_activity_desc: Phase 02 complete, transitioned to Phase 3
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-08-04T17:21:20.814Z"
+last_activity: 2026-08-05
+last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 11
-  completed_plans: 6
+  total_plans: 12
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** The unattended daily run — a timer fires, real numbers land in the database, the Sheet reflects them, and Discord says so, with no human in the loop.
-**Current focus:** Phase 02 — vps-systemd
+**Current focus:** Phase 3 — Collector Core & API Sources
 
 ## Current Position
 
-Phase: 3 — Collector Core & API Sources
-Plan: Not started
+Phase: 3 (Collector Core & API Sources) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-08-04 — Phase 02 complete, transitioned to Phase 3
+Last activity: 2026-08-05 — Phase 3 execution started
 
-Progress: [██████████] 100%
+Progress: [██████░░░░] 58%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [██████████] 100%
 | Phase 02-vps-systemd P01 | 20min | 2 tasks | 5 files |
 | Phase 02-vps-systemd P02 | 25min | 3 tasks | 1 files |
 | Phase 02-vps-systemd P03 | 20min | 2 tasks | 1 files |
+| Phase 03 P01 | 15min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: Entry 1 limitation: RUN-03 partial closure — timer proven unattended, real collector output waits for Phase 3
 - [Phase ?]: Reboot catch-up: both attempts recorded (diagnosed true-negative + passing catch-up), not just the pass — margin-vs-boot-time is a real reboot-test failure mode
 - [Phase ?]: systemd-analyze calendar validates a CLI string, not the loaded unit — stale test schedule caught and corrected via systemctl cat before entry 4 closed
+- [Phase ?]: channel_not_found.json items key is absent entirely (not empty list) — 03-02 parser must use data.get('items')
+- [Phase ?]: OPS-06 not marked complete — plan frontmatter notes it is only partly satisfied by YouTube fixtures alone
 
 ### Pending Todos
 
@@ -109,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-03T18:46:05.972Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-collector-core-api-sources/03-CONTEXT.md
+Last session: 2026-08-04T17:21:20.684Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None
