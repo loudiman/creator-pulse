@@ -1,4 +1,4 @@
-"""Hand-run fixture recorder — never invoked by pytest.
+"""Hand-run fixture recorder, with optional request headers — never invoked by pytest.
 
 Fetches a public URL and saves the body into tests/fixtures/{source}/{case}.{ext}. Generic
 fetch-and-save only: no platform knowledge, no parsing, no browser automation. Run by hand;
@@ -25,6 +25,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--case", required=True, help="scenario name, e.g. channel_ok")
     parser.add_argument("--url", required=True, help="public URL to fetch")
     parser.add_argument("--ext", default="json", help="file extension (default: json)")
+    parser.add_argument(
+        "--header",
+        action="append",
+        default=None,
+        metavar="'Name: value'",
+        help="extra request header, repeatable, e.g. 'Authorization: Bearer ...'",
+    )
     args = parser.parse_args(argv)
 
     for label, value in (("--source", args.source), ("--case", args.case)):
@@ -32,12 +39,27 @@ def main(argv: list[str] | None = None) -> int:
             print(f"invalid {label}: {value!r} (must match ^[a-z0-9_]+$)", file=sys.stderr)
             return 2
 
+    headers: dict[str, str] | None = None
+    if args.header is not None:
+        headers = {}
+        for raw in args.header:
+            name, sep, value = raw.partition(":")
+            name = name.strip()
+            value = value.strip()
+            if not sep or not name or re.search(r"\s", name):
+                print(f"invalid --header: {raw!r}", file=sys.stderr)
+                return 2
+            headers[name] = value
+
     target = (FIXTURES_ROOT / args.source / f"{args.case}.{args.ext}").resolve()
     if FIXTURES_ROOT not in target.parents:
         print(f"refusing to write outside fixtures root: {target}", file=sys.stderr)
         return 2
 
-    response = requests.get(args.url, timeout=_TIMEOUT_SECONDS)
+    kwargs = {"timeout": _TIMEOUT_SECONDS}
+    if headers is not None:
+        kwargs["headers"] = headers
+    response = requests.get(args.url, **kwargs)
     response.raise_for_status()
 
     target.parent.mkdir(parents=True, exist_ok=True)
