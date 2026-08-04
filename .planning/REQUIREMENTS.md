@@ -18,7 +18,16 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Sources
 
 - [ ] **SRC-01**: YouTube source returns subscriber count, total view count, and video count for a configured channel via YouTube Data API v3 using an API key
-- [ ] **SRC-02**: Twitch source returns summed recent-VOD view count and current live status for a configured channel using an app access token
+- [ ] **SRC-02**: Twitch source returns summed recent-VOD view count and current live status for a configured channel using an app access token *(BLOCKED-EXTERNAL as of 2026-08-05 — see note below)*
+
+  > **SRC-02 is blocked on Twitch account 2FA, not on effort or design.** Registering an application
+  > in the Twitch Developer Console requires two-factor authentication on the account, 2FA enrolment
+  > requires a mobile number, and the verification SMS does not arrive. No client id or secret can be
+  > obtained, so the five Twitch fixtures cannot be recorded through `scripts/record_fixture.py` and
+  > hand-authoring a fixture is forbidden. Plan `03-03-PLAN.md` is written, reviewed, and left
+  > unexecuted; the source layer's `Protocol` plus `FETCHERS` registry means wiring it in is one
+  > registry line once credentials exist. This is the second time Twitch has walled this project off —
+  > the first was the follower-count endpoint requiring a broadcaster user token (see Out of Scope).
 - [ ] **SRC-03**: TikTok source returns follower count, total likes, and video count by reading the public profile page with Playwright
 - [ ] **SRC-04**: Every source returns the same normalized record shape; a metric the platform does not expose is NULL, never 0
 - [ ] **SRC-05**: A source failing on a transient error retries with backoff before the attempt is recorded as failed
@@ -134,7 +143,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | CFG-02 | Phase 3: Collector Core & API Sources | Pending |
 | CFG-03 | Phase 3: Collector Core & API Sources | Pending |
 | SRC-01 | Phase 3: Collector Core & API Sources | Pending |
-| SRC-02 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-02 | Phase 3: Collector Core & API Sources | Blocked (external — Twitch 2FA) |
 | SRC-03 | Phase 4: Playwright & Sheets | Pending |
 | SRC-04 | Phase 3: Collector Core & API Sources | Pending |
 | SRC-05 | Phase 3: Collector Core & API Sources | Pending |

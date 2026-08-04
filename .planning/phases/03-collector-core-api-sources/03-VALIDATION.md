@@ -54,14 +54,14 @@ executor fills the Task ID and Plan columns as each plan lands.
 | TBD | TBD | 2 | CFG-01, CFG-02 | — | N/A | unit | `pytest tests/test_config.py -x` | ✅ (file exists, cases missing) | ⬜ pending |
 | TBD | TBD | 2 | CFG-03 | T-03-02 | `yaml.safe_load` only; validation runs before any network call | unit | `pytest tests/test_config.py::test_validate_reports_every_problem -x` | ✅ (file exists, cases missing) | ⬜ pending |
 | TBD | TBD | 2 | SRC-01, SRC-04, OPS-06 | T-03-03 | Lazy `%`-style logging of creator id, never f-string | unit | `pytest tests/test_sources.py::test_youtube_hidden_subscriber_count_maps_to_none -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SRC-02, SRC-04, OPS-06 | T-03-04 | Token and headers never logged | unit | `pytest tests/test_sources.py -x -k twitch` | ❌ W0 | ⬜ pending |
+| TBD | TBD | 2 | SRC-02, SRC-04, OPS-06 | T-03-04 | Token and headers never logged | unit | `pytest tests/test_sources.py -x -k twitch` | ❌ W0 | ⬜ deferred — SRC-02 blocked on Twitch 2FA; no client id, so the 5 Twitch fixtures cannot be recorded and 03-03 is unexecuted (REQUIREMENTS.md §Sources) |
 | TBD | TBD | 2 | SRC-05 | — | N/A | unit | `pytest tests/test_sources.py::test_retries_on_429_then_succeeds -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | RUN-01, RUN-02, OPS-07 | — | N/A | unit | `pytest tests/test_collector.py::test_one_source_failure_does_not_abort_run -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | RUN-05 | — | N/A | unit | `pytest tests/test_collector.py::test_all_rows_from_one_run_share_metric_date -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | DATA-03 | — | N/A | unit | `pytest tests/test_collector.py::test_runs_row_written_on_crash -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | OPS-05 | — | N/A | integration | `pytest tests/test_collector.py::test_idempotent_rerun_same_day -x` | ❌ W0 | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky · ⬜ deferred (planned, blocked externally, not dropped)*
 
 ---
 
@@ -81,10 +81,16 @@ executor fills the Task ID and Plan columns as each plan lands.
       from the recorded `channel_ok.json` body by a hand-run step (03-01 Task 2 step E), with only
       `statistics.hiddenSubscriberCount` and `statistics.subscriberCount` changed, because no such
       channel is available to record. The two cover both shapes RESEARCH.md A1 leaves open.
-- [ ] `tests/fixtures/twitch/videos_ok.json`, `videos_empty.json`, `users_not_found.json`,
+- [ ] **BLOCKED ON CREDENTIALS (2026-08-05) — kept in the list, not dropped.**
+      `tests/fixtures/twitch/videos_ok.json`, `videos_empty.json`, `users_not_found.json`,
       `streams_live.json`, `streams_offline.json` — record with `scripts/record_fixture.py`. Needs
       real Twitch credentials. Recording `videos_ok.json` is the same call as the live verification
       below, so run it first and record it once.
+      Blocked: registering a Twitch application requires 2FA, 2FA enrolment requires a mobile number,
+      and the verification SMS does not arrive — so no client id, no secret, no app access token.
+      Recording is the only sanctioned way to produce these five; hand-authoring is forbidden and the
+      blockage creates no exception. Re-executable verbatim from `03-01-PLAN.md`
+      §"Deferred — blocked on Twitch credentials (SRC-02)". See `REQUIREMENTS.md` §Sources.
 
 No framework install is needed — pytest 9.1.1 is already pinned and installed, and `tests/` already
 holds two passing files.
@@ -95,8 +101,8 @@ holds two passing files.
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| `GET /helix/videos` returns a usable `view_count` under an app access token | SRC-02 | No fixture can prove an auth wall does not exist. STATE.md records this as a blocker, verified indirectly only. RESEARCH.md assumption A2 rests on community sources because `dev.twitch.tv` was unreachable. | Mint an app token, then call `GET /helix/videos?user_id=<xqc>&type=archive&first=100` with and without `period=month`. Diff the two result sets. Record both outcomes in `journal.md`. Run this before writing the parser body. |
-| `period=month` actually filters by publish date | SRC-02 (D-05) | RESEARCH.md Pitfall T1 — three independent forum reports (2018, 2021, March 2025) say the parameter is ignored. Only a live call settles it. | Same call as above. If `period` is ignored, D-05's window is Twitch's retention window instead of one month. The decision does not change; the caveat in the README (OPS-08) and `journal.md` does. |
+| **⬜ DEFERRED (2026-08-05)** — `GET /helix/videos` returns a usable `view_count` under an app access token | SRC-02 | No fixture can prove an auth wall does not exist. STATE.md records this as a blocker, verified indirectly only. RESEARCH.md assumption A2 rests on community sources because `dev.twitch.tv` was unreachable. **Deferred, not dropped:** no client id or secret can be obtained (Twitch 2FA requires a mobile number; the SMS does not arrive), so no app token can be minted. This blocker stays open and the instructions stay verbatim for later. | Mint an app token, then call `GET /helix/videos?user_id=<xqc>&type=archive&first=100` with and without `period=month`. Diff the two result sets. Record both outcomes in `journal.md`. Run this before writing the parser body. |
+| **⬜ DEFERRED (2026-08-05)** — `period=month` actually filters by publish date | SRC-02 (D-05) | RESEARCH.md Pitfall T1 — three independent forum reports (2018, 2021, March 2025) say the parameter is ignored. Only a live call settles it. **Deferred with the row above, same cause, same credential.** | Same call as above. If `period` is ignored, D-05's window is Twitch's retention window instead of one month. The decision does not change; the caveat in the README (OPS-08) and `journal.md` does. |
 | Real API data reaches the real database | Phase gate | ROADMAP.md §"Definition of Green" — from Phase 3 onward every phase needs a human-observed end-to-end run. Automated checks cannot close this phase. | Run `creatorpulse collect` on the droplet against real credentials. Paste the journal output and a `sqlite3` query into `03-UAT.md`, one paste per criterion (D-19). |
 | One source made to fail is logged, counted, and does not stop the run | Criterion 3 | The unit test monkeypatches a raise. The manual gate must meet a real bad input on the real code path. | Add a fourth `creators.yaml` entry with a real `id` and a handle that does not exist (D-18). Run once. Paste the journal. Revert the file. |
 | Reader and writer share the database without a lock error | DATA-05, criterion 5 | Real concurrency across two processes cannot be proven by a single-process unit test. | Run `sqlite3 /var/lib/creatorpulse/creatorpulse.db 'select count(*) from metrics;'` while the collector is mid-run. Paste both outputs. |
