@@ -50,12 +50,13 @@ executor fills the Task ID and Plan columns as each plan lands.
 | TBD | TBD | 1 | DATA-01, DATA-02 | T-03-01 | Named-placeholder bind, never f-string SQL | unit | `pytest tests/test_db.py::test_upsert_same_key_updates_not_duplicates -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 1 | DATA-04 | — | N/A | unit | `pytest tests/test_db.py::test_upsert_different_date_does_not_touch_prior_row -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 1 | DATA-05 | — | Bot opens `create=False`; missing table raises, never auto-creates | unit | `pytest tests/test_db.py::test_create_false_raises_on_missing_table -x` | ❌ W0 | ⬜ pending |
+| TBD | 03-05 | 4 | DATA-02 | — | Never `COALESCE(x, 0)` — a stored `0` and a stored `NULL` round-trip distinct and non-equal | unit | `pytest tests/test_db.py::test_stored_null_and_zero_round_trip_distinct -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 1 | SRC-04 | — | N/A | unit | `pytest tests/test_models.py -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 2 | CFG-01, CFG-02 | — | N/A | unit | `pytest tests/test_config.py -x` | ✅ (file exists, cases missing) | ⬜ pending |
 | TBD | TBD | 2 | CFG-03 | T-03-02 | `yaml.safe_load` only; validation runs before any network call | unit | `pytest tests/test_config.py::test_validate_reports_every_problem -x` | ✅ (file exists, cases missing) | ⬜ pending |
-| TBD | TBD | 2 | SRC-01, SRC-04, OPS-06 | T-03-03 | Lazy `%`-style logging of creator id, never f-string | unit | `pytest tests/test_sources.py::test_youtube_hidden_subscriber_count_maps_to_none -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | SRC-02, SRC-04, OPS-06 | T-03-04 | Token and headers never logged | unit | `pytest tests/test_sources.py -x -k twitch` | ❌ W0 | ⬜ deferred — SRC-02 blocked on Twitch 2FA; no client id, so the 5 Twitch fixtures cannot be recorded and 03-03 is unexecuted (REQUIREMENTS.md §Sources) |
-| TBD | TBD | 2 | SRC-05 | — | N/A | unit | `pytest tests/test_sources.py::test_retries_on_429_then_succeeds -x` | ❌ W0 | ⬜ pending |
+| TBD | 03-06 | 3 | SRC-01, SRC-04, OPS-06 | T-03-03 | Lazy `%`-style logging of creator id, never f-string | unit | `pytest tests/test_sources.py::test_youtube_hidden_subscriber_count_maps_to_none -x` | ❌ W0 | ⬜ pending |
+| TBD | 03-03 | 4 | SRC-02, SRC-04, OPS-06 | T-03-04 | Token and headers never logged | unit | `pytest tests/test_sources.py -x -k twitch` | ❌ W0 | ⬜ deferred — SRC-02 blocked on Twitch 2FA; no client id, so the 5 Twitch fixtures cannot be recorded and 03-03 is unexecuted (REQUIREMENTS.md §Sources) |
+| TBD | 03-06 | 3 | SRC-05 | T-03-04 | Retry line carries identifier, source, attempt number — never headers, params, key, or bearer | unit | `pytest tests/test_sources.py::test_retries_on_429_then_succeeds -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | RUN-01, RUN-02, OPS-07 | — | N/A | unit | `pytest tests/test_collector.py::test_one_source_failure_does_not_abort_run -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | RUN-05 | — | N/A | unit | `pytest tests/test_collector.py::test_all_rows_from_one_run_share_metric_date -x` | ❌ W0 | ⬜ pending |
 | TBD | TBD | 3 | DATA-03 | — | N/A | unit | `pytest tests/test_collector.py::test_runs_row_written_on_crash -x` | ❌ W0 | ⬜ pending |
@@ -72,7 +73,10 @@ executor fills the Task ID and Plan columns as each plan lands.
 - [ ] `tests/test_collector.py` — orchestration tests (idempotency, failure isolation,
       `metric_date`-once, `runs`-row-on-crash). Uses a fake in-memory fetcher registry, so it needs
       no recorded fixtures and no credentials.
-- [ ] `tests/test_sources.py` — fixture-in, record-out tests. Blocked on the fixtures below.
+- [ ] `tests/test_sources.py` — created by `03-06` (wave 3) with the retry cases and the YouTube
+      fixture-in / record-out cases, then *extended* by `03-03` with the Twitch cases. The retry half
+      needs no fixture at all (scripted local callable, faked clock); the YouTube half reads the four
+      fixtures below; only the Twitch half is blocked.
 - [ ] `tests/test_config.py` — extend the existing file with `validate()` cases. No fixture
       dependency.
 - [ ] `tests/fixtures/youtube/channel_ok.json`, `channel_not_found.json` — record with

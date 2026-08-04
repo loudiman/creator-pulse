@@ -414,8 +414,11 @@ Apps Script.
 - The `runs` row and the log line together should answer "what did this run actually do?" without a
   database query: rows written, failures, and the per-source skip and VOD-count lines.
 - OPS-06 wants a fixture in and an expected record out, for each source. The most valuable fixtures
-  are not the happy paths: record a `channel_hidden_subs.json` for D-03's first rule and a
-  `videos_empty.json` for D-08.
+  are not the happy paths: cover D-03's first rule and record a `videos_empty.json` for D-08.
+  *(Filename correction, 2026-08-05: no channel that hides its subscriber count was available to
+  record, so D-03 rule 1 is covered by two fixtures derived from the recorded `channel_ok.json` —
+  `channel_hidden_subs_derived.json` and `channel_hidden_subs_omitted_derived.json`, one per shape
+  RESEARCH.md A1 leaves open. The idea is unchanged; only the filenames are.)*
 - Keep the YouTube call to one request per creator with `part=statistics&forHandle=@handle`. A
   separate resolution call would double the quota cost for no benefit.
 - Record an `channel_not_found.json` fixture and a `users_not_found.json` fixture — each an HTTP 200

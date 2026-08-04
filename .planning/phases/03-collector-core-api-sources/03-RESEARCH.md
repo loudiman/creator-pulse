@@ -210,7 +210,8 @@ tests/
 ├── fixtures/
 │   ├── youtube/
 │   │   ├── channel_ok.json
-│   │   ├── channel_hidden_subs.json      # D-03 rule 1 case
+│   │   ├── channel_hidden_subs_derived.json          # D-03 rule 1, shape 1 — flag + "0"
+│   │   ├── channel_hidden_subs_omitted_derived.json  # D-03 rule 1, shape 2 — key absent
 │   │   └── channel_not_found.json         # D-18 case — empty items[]
 │   └── twitch/
 │       ├── videos_ok.json
@@ -724,7 +725,7 @@ def _fake_response(fixture_path: Path, status_code: int = 200) -> Mock:
 
 def test_youtube_hidden_subscriber_count_maps_to_none(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("YOUTUBE_API_KEY", "fake-key-for-test")
-    fixture = FIXTURES / "youtube" / "channel_hidden_subs.json"
+    fixture = FIXTURES / "youtube" / "channel_hidden_subs_derived.json"
     monkeypatch.setattr(
         "creatorpulse.sources.youtube.requests.get",
         lambda *a, **kw: _fake_response(fixture),
@@ -762,7 +763,7 @@ Verified live this session: `Mock(spec=requests.Response)` with `.json.return_va
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | `hiddenSubscriberCount: true` causes `subscriberCount` to be the literal string `"0"` rather than an omitted key | Pitfall Y1, YouTube fetch example | If wrong (field actually omitted), `stats["subscriberCount"]` would `KeyError` instead of silently reading `"0"` — this is actually a safe-fail direction (raises loudly rather than mis-parsing), so the risk is low, but the code as written assumes the key exists. Verify against `channel_hidden_subs.json` fixture once recorded, before trusting the parser. |
+| A1 | `hiddenSubscriberCount: true` causes `subscriberCount` to be the literal string `"0"` rather than an omitted key | Pitfall Y1, YouTube fetch example | If wrong (field actually omitted), `stats["subscriberCount"]` would `KeyError` instead of silently reading `"0"` — this is actually a safe-fail direction (raises loudly rather than mis-parsing), so the risk is low, but the code as written assumes the key exists. **Resolved 2026-08-05 by planning rather than by observation:** both shapes get a fixture — `channel_hidden_subs_derived.json` (flag + `"0"`) and `channel_hidden_subs_omitted_derived.json` (flag, key absent), both derived from the recorded `channel_ok.json` — and 03-02 fixes the read order so the flag is read first and `subscriberCount` is never read when it is true. Which shape the live API returns therefore stops mattering. |
 | A2 | Get Videos accepts an app access token with no scope required | Pitfall T2 | If wrong, every Twitch `views` fetch fails with 401/403 on every run — this is exactly why STATE.md flags it as a blocker to verify live before building the parser, and this research strengthens (doesn't replace) that live-verification requirement |
 | A3 | Twitch's `period=month` parameter is silently ignored (documented forum bug persists in the current API version) | Pitfall T1 | If Twitch has since fixed it, the window is correctly one month and no caveat is needed beyond D-05's own retention-window caveat — low risk either way since D-05/D-07/D-08 don't change; only the honest characterization of what the number represents changes |
 
@@ -830,7 +831,7 @@ Verified live this session: `Mock(spec=requests.Response)` with `.json.return_va
 
 ### Wave 0 Gaps
 
-- [ ] `tests/fixtures/youtube/channel_ok.json`, `channel_hidden_subs.json`, `channel_not_found.json` — record with `scripts/record_fixture.py` once `YOUTUBE_API_KEY` is available
+- [ ] `tests/fixtures/youtube/channel_ok.json`, `channel_not_found.json` — record with `scripts/record_fixture.py` once `YOUTUBE_API_KEY` is available; then `channel_hidden_subs_derived.json` and `channel_hidden_subs_omitted_derived.json`, *derived* from the recorded `channel_ok.json` body with only `statistics.hiddenSubscriberCount` and `statistics.subscriberCount` changed (no such channel is available to record)
 - [ ] `tests/fixtures/twitch/videos_ok.json`, `videos_empty.json`, `users_not_found.json`, `streams_live.json`, `streams_offline.json` — same, once Twitch credentials are available; recording `videos_ok.json` is also the live verification call this research recommends running first (kill two birds)
 - [ ] `tests/test_db.py` — DDL + upsert unit tests, no fixture dependency, can be written before any credential is available
 - [ ] `tests/test_sources.py` — fixture-in/record-out tests, blocked on the fixtures above
