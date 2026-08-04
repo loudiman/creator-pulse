@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Collector Core & API Sources
 status: verifying
-stopped_at: Completed 03-05-PLAN.md (phase 3 PARTIAL — automated coverage green, human-observed UAT outstanding)
-last_updated: "2026-08-04T18:14:28.138Z"
+stopped_at: Phase 3 executed — 5 plans, 63 tests, verification human_needed on UAT
+last_updated: "2026-08-04T18:21:33.890Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 3 execution started
 progress:
@@ -115,6 +115,7 @@ None yet.
 - **Ownership constraint, all phases:** Phases 2 and 5 are human-built end to end; Phase 6 is mixed. The agent must not generate systemd units, Apps Script code, or Discord Developer Portal configuration.
 - **Hard deadline:** ship Wed 5 Aug 2026, interview Thu 6 Aug 8:00pm PHT. Roughly one phase per day, part-time. Cut order is fixed in ROADMAP.md — slash commands, then TikTok, then History tab. Never cut Phases 2, 5, or 6.
 - Phase 3 human-observed real-data run outstanding (ROADMAP Definition of Green) — needs droplet SSH access and real YOUTUBE_API_KEY/TWITCH_CLIENT_ID/SECRET; see 03-UAT.md Gaps
+- Phase 3 PARTIAL: 5/5 must-haves verified in code, all 4 green gates pass, but ROADMAP's human-observed real-data run is outstanding. 03-UAT.md holds 5 PENDING entries with close-later commands. Needs droplet /etc/creatorpulse/creatorpulse.env filled (YOUTUBE_API_KEY available now; Twitch blocked on 2FA).
 
 ## Deferred Items
 
@@ -126,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-04T18:14:28.116Z
-Stopped at: Completed 03-05-PLAN.md (phase 3 PARTIAL — automated coverage green, human-observed UAT outstanding)
-Resume file: None
+Last session: 2026-08-04T18:21:33.857Z
+Stopped at: Phase 3 executed — 5 plans, 63 tests, verification human_needed on UAT
+Resume file: .planning/phases/03-collector-core-api-sources/03-UAT.md
