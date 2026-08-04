@@ -75,8 +75,12 @@ executor fills the Task ID and Plan columns as each plan lands.
 - [ ] `tests/test_sources.py` — fixture-in, record-out tests. Blocked on the fixtures below.
 - [ ] `tests/test_config.py` — extend the existing file with `validate()` cases. No fixture
       dependency.
-- [ ] `tests/fixtures/youtube/channel_ok.json`, `channel_hidden_subs.json`, `channel_not_found.json`
-      — record with `scripts/record_fixture.py`. Needs a real `YOUTUBE_API_KEY`.
+- [ ] `tests/fixtures/youtube/channel_ok.json`, `channel_not_found.json` — record with
+      `scripts/record_fixture.py`. Needs a real `YOUTUBE_API_KEY`. Then
+      `channel_hidden_subs_derived.json` and `channel_hidden_subs_omitted_derived.json` — *derived*
+      from the recorded `channel_ok.json` body by a hand-run step (03-01 Task 2 step E), with only
+      `statistics.hiddenSubscriberCount` and `statistics.subscriberCount` changed, because no such
+      channel is available to record. The two cover both shapes RESEARCH.md A1 leaves open.
 - [ ] `tests/fixtures/twitch/videos_ok.json`, `videos_empty.json`, `users_not_found.json`,
       `streams_live.json`, `streams_offline.json` — record with `scripts/record_fixture.py`. Needs
       real Twitch credentials. Recording `videos_ok.json` is the same call as the live verification

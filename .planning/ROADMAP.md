@@ -151,7 +151,7 @@ Notes:
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Live Twitch verification settles the `view_count` blocker; eight fixtures recorded; `03-UAT.md` scaffold (human-gated)
+- [ ] 03-01-PLAN.md — Live Twitch verification settles the `view_count` blocker; nine fixtures — seven recorded, two derived; `03-UAT.md` scaffold (human-gated)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
