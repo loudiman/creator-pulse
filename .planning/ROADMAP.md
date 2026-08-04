@@ -61,6 +61,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Goal**: The repo has a shape and a gate — every later phase can be judged pass/fail by one command
 **Mode:** mvp
+**UI hint**: no
 **Owner:** agent
 **Depends on**: Nothing (first phase)
 **Requirements**: OPS-02, OPS-03, OPS-04
@@ -96,6 +97,7 @@ Notes:
 
 **Goal**: A rented Linux box runs scheduled work unattended, logs it, and holds secrets the repo never sees
 **Mode:** mvp
+**UI hint**: no
 **Owner:** mixed *(changed from `human` by D-01 — the agent writes environment-variable path resolution in `src/creatorpulse/` and nothing else; the unit, the timer, UFW, SSH, and `docs/deploy.md` stay human-built)*
 **Depends on**: Phase 1
 **Requirements**: RUN-03, RUN-04, OPS-01
@@ -135,6 +137,7 @@ Notes:
 
 **Goal**: Real numbers from YouTube and Twitch land in SQLite with history, and one broken source cannot take the run down
 **Mode:** mvp
+**UI hint**: no
 **Owner:** agent
 **Depends on**: Phase 2
 **Requirements**: CFG-01, CFG-02, CFG-03, SRC-01, SRC-02, SRC-04, SRC-05, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, RUN-01, RUN-02, RUN-05, OPS-05, OPS-06, OPS-07
@@ -181,6 +184,7 @@ Notes:
 
 **Goal**: The third source works without an API, and the ops team gets a Sheet they can actually read
 **Mode:** mvp
+**UI hint**: no
 **Owner:** agent
 **Depends on**: Phase 3
 **Requirements**: SRC-03, SHEET-01, SHEET-02, SHEET-03, SHEET-04, SHEET-05, SHEET-06, SHEET-07
@@ -210,6 +214,7 @@ Notes:
 
 **Goal**: The Sheet stops being a dump and becomes a two-way surface — it formats itself and talks back to Discord
 **Mode:** mvp
+**UI hint**: no
 **Owner:** human
 **Depends on**: Phase 4
 **Requirements**: SCRIPT-01, SCRIPT-02, SCRIPT-03, SCRIPT-04
@@ -234,6 +239,7 @@ Notes:
 
 **Goal**: Discord becomes the place the numbers show up and the place you ask about them
 **Mode:** mvp
+**UI hint**: no
 **Owner:** mixed
 **Depends on**: Phase 3 (database), Phase 5 (webhook proven)
 **Requirements**: BOT-01, BOT-02, BOT-03, BOT-04, BOT-05, BOT-06, BOT-07
@@ -263,6 +269,7 @@ Notes:
 
 **Goal**: The whole loop runs cold, unattended, while someone watches — and a stranger can understand it from the README alone
 **Mode:** mvp
+**UI hint**: no
 **Owner:** mixed
 **Depends on**: Phase 6
 **Requirements**: OPS-08, OPS-09
@@ -307,7 +314,9 @@ Notes on two assignment calls:
 
 The research's proposed structure was adopted without deviation, renumbered from 0-6 to 1-7 per GSD convention. It matches PROJECT.md's own day-by-day plan and the author's stated cut order, and requirement coverage did not force a change.
 
-No phase is annotated with a UI hint. "Dashboard" here is a Google Sheets tab, not a frontend — PROJECT.md explicitly places a web UI out of scope. `/gsd-ui-phase` should not be suggested for any phase in this roadmap.
+Every phase is annotated `**UI hint**: no`. "Dashboard" here is a Google Sheets tab, not a frontend — PROJECT.md explicitly places a web UI out of scope. `/gsd-ui-phase` should not be suggested for any phase in this roadmap.
+
+The annotation is load-bearing, not decorative. The UI safety gate detects a frontend by sniffing the phase section for the standalone words `UI`, `interface`, `frontend`, `component`, `layout`, `page`, `screen`, `view`, `form`, `dashboard`, and `widget`. Four phases tripped it on ordinary prose: Phase 1 on "package layout", Phase 3 on "view count", Phase 4 on the Sheets "Dashboard" tab plus a TikTok profile "page" plus the column "layout", and Phase 5 on the same two. Each was a false positive, and each blocked planning until `--skip-ui` was passed by hand. `**UI hint**: yes|no` is the detector's own authoritative override — it short-circuits the sniff and strips its own line first, so the bare word `UI` inside it cannot self-trigger. Do not remove these lines to tidy the metadata block; the gate will start blocking again on the next wording change.
 
 ## Progress
 
