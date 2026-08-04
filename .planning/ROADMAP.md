@@ -149,12 +149,20 @@ Notes:
   4. A metric the platform does not expose reads as NULL in the database, never 0 — and the Twitch `followers` column is NULL on every row for exactly this reason
   5. Every run appends a `runs` row with start, duration, rows written, and failure count, and the bot can read the database while the collector writes without a lock error
 
-**Plans**: 5 plans
+**Plans**: 6 plans — 5 executable, 1 deferred
+
+> **SRC-02 deferred 2026-08-05, blocked external.** Registering a Twitch application requires 2FA on
+> the account, 2FA enrolment requires a mobile number, and the verification SMS does not arrive. No
+> client id, no secret, no app access token, so the five Twitch fixtures cannot be recorded and
+> hand-authoring one stays forbidden. `03-03-PLAN.md` is written, reviewed, and left unexecuted; the
+> `Protocol` plus `FETCHERS` registry makes wiring it in one registry line once credentials exist.
+> See REQUIREMENTS.md §Sources SRC-02. Twitch has now walled this project off twice — the first was
+> the follower endpoint requiring a broadcaster user token.
 
 Plans:
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Live Twitch verification settles the `view_count` blocker; nine fixtures — seven recorded, two derived; `03-UAT.md` scaffold (human-gated)
+- [ ] 03-01-PLAN.md — Four YouTube fixtures (two recorded, two derived), the `--header` flag, and the `03-UAT.md` scaffold (human-gated). The five Twitch fixtures and the live `view_count` verification are held in its Deferred section.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -162,12 +170,13 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 03-03-PLAN.md — Retry decorator and the Twitch source: one module, one registry line, `followers` NULL by design
 - [ ] 03-04-PLAN.md — `validate()` names the creator and the field, and the run refuses to start on a bad config
+- [ ] 03-06-PLAN.md — Retry decorator wrapping the YouTube call: narrow transient list, fixed backoff, no header parsing (SRC-05)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [ ] 03-05-PLAN.md — Failure isolation, the `runs` row a dying run still writes, the bot's read path, and the five UAT proofs
+- [ ] 03-03-PLAN.md — **DEFERRED (SRC-02)** — the Twitch source: one module, one registry line, `followers` NULL by design. Do not execute until Twitch credentials exist.
 
 Notes:
 
