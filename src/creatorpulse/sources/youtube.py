@@ -7,6 +7,7 @@ from typing import Any
 import requests
 
 from creatorpulse.models import MetricRecord
+from creatorpulse.sources._retry import retry
 
 _BASE_URL = "https://www.googleapis.com/youtube/v3/channels"
 
@@ -18,7 +19,8 @@ class ChannelNotFound(Exception):
 def fetch(identifier: str, metric_date: date) -> MetricRecord:
     api_key = os.environ["YOUTUBE_API_KEY"]
     params = {"part": "statistics", "forHandle": identifier, "key": api_key}
-    response = requests.get(_BASE_URL, params=params, timeout=10)
+    get = retry(requests.get, creator_id=identifier, source="youtube")
+    response = get(_BASE_URL, params=params, timeout=10)
     response.raise_for_status()
     body: dict[str, Any] = response.json()
 
