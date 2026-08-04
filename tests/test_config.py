@@ -1,11 +1,15 @@
-"""Tests for creatorpulse.config — parse-level coverage over the committed creators.yaml.
+"""Tests for creatorpulse.config — parse-level coverage over the committed creators.yaml,
+plus validate()'s D-12 rule set (CFG-02, CFG-03).
 
 Fixtures only, no live network calls. Asserts on parsed Creator objects, not raw YAML text.
 """
 
 from pathlib import Path
+from typing import Any
 
-from creatorpulse.config import Creator, load_creators
+import pytest
+
+from creatorpulse.config import Creator, ValidationError, load_creators, load_raw, validate
 
 CREATORS_YAML = Path(__file__).resolve().parent.parent / "creators.yaml"
 
@@ -24,3 +28,181 @@ def test_committed_creators_yaml_loads() -> None:
 
     ids = [creator.id for creator in creators]
     assert len(ids) == len(set(ids))
+
+
+def test_committed_creators_yaml_validates_clean() -> None:
+    raw = load_raw(CREATORS_YAML)
+
+    validate(raw)  # must not raise — three creators, nine source keys, tiktok included
+
+    assert len(load_creators(CREATORS_YAML)) == 3
+
+
+def _base_entry(**overrides: Any) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "id": "a-creator",
+        "name": "A Creator",
+        "sources": {"youtube": "@handle"},
+    }
+    entry.update(overrides)
+    return entry
+
+
+def test_missing_creators_key_raises_one_problem() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        validate({})
+
+    assert len(exc_info.value.problems) == 1
+    assert "creators" in exc_info.value.problems[0]
+
+
+def test_empty_creators_list_raises_one_problem() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": []})
+
+    assert len(exc_info.value.problems) == 1
+
+
+def test_non_list_creators_raises_one_problem() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": "not-a-list"})
+
+    assert len(exc_info.value.problems) == 1
+
+
+def test_missing_id_produces_problem_naming_id() -> None:
+    entry = _base_entry()
+    del entry["id"]
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("field=id" in p for p in exc_info.value.problems)
+
+
+def test_invalid_id_slug_produces_problem_naming_id() -> None:
+    entry = _base_entry(id="Not A Slug!")
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("field=id" in p for p in exc_info.value.problems)
+
+
+def test_duplicate_id_flags_second_entry_only() -> None:
+    first = _base_entry(id="dup", name="First")
+    second = _base_entry(id="dup", name="Second")
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [first, second]})
+
+    id_problems = [p for p in exc_info.value.problems if "field=id" in p]
+    assert len(id_problems) == 1
+    assert "duplicate" in id_problems[0]
+
+
+def test_missing_name_produces_problem_naming_name() -> None:
+    entry = _base_entry()
+    del entry["name"]
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("field=name" in p for p in exc_info.value.problems)
+
+
+def test_whitespace_only_name_produces_problem_naming_name() -> None:
+    entry = _base_entry(name="   ")
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("field=name" in p for p in exc_info.value.problems)
+
+
+def test_missing_sources_produces_problem_naming_sources() -> None:
+    entry = _base_entry()
+    del entry["sources"]
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("field=sources" in p for p in exc_info.value.problems)
+
+
+def test_empty_sources_map_produces_problem_naming_sources() -> None:
+    entry = _base_entry(sources={})
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("field=sources" in p for p in exc_info.value.problems)
+
+
+def test_unknown_platform_key_fails_validation() -> None:
+    entry = _base_entry(sources={"youtub": "@handle"})
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("sources.youtub" in p for p in exc_info.value.problems)
+
+
+def test_known_unregistered_platform_tiktok_does_not_fail() -> None:
+    entry = _base_entry(sources={"youtube": "@handle", "tiktok": "@handle"})
+
+    validate({"creators": [entry]})  # must not raise — known, merely unregistered
+
+
+def test_empty_source_value_produces_problem() -> None:
+    entry = _base_entry(sources={"youtube": "   "})
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": [entry]})
+
+    assert any("sources.youtube" in p for p in exc_info.value.problems)
+
+
+def test_validate_reports_every_problem() -> None:
+    creators = [
+        _base_entry(id="", name="Only Bad Id"),
+        _base_entry(id="ok-two", name=""),
+        _base_entry(id="ok-three", sources={}),
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate({"creators": creators})
+
+    assert len(exc_info.value.problems) == 3
+    assert "field=id" in exc_info.value.problems[0]
+    assert "field=name" in exc_info.value.problems[1]
+    assert "field=sources" in exc_info.value.problems[2]
+
+
+def test_validation_error_problems_is_tuple_of_strings() -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        validate({})
+
+    assert isinstance(exc_info.value.problems, tuple)
+    assert all(isinstance(p, str) for p in exc_info.value.problems)
+
+
+def test_load_raw_then_validate_on_malformed_tmp_path_file(tmp_path: Path) -> None:
+    bad_yaml = tmp_path / "creators.yaml"
+    bad_yaml.write_text(
+        "creators:\n"
+        "  - id: dup\n"
+        "    name: A\n"
+        "    sources:\n"
+        "      youtube: '@a'\n"
+        "  - id: dup\n"
+        "    name: B\n"
+        "    sources:\n"
+        "      youtube: '@b'\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        validate(load_raw(bad_yaml))
+
+    assert any("field=id" in p and "duplicate" in p for p in exc_info.value.problems)
