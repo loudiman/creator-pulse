@@ -6,7 +6,9 @@ import sys
 import time
 from pathlib import Path
 
+from creatorpulse.collector import collect_once
 from creatorpulse.config import load_creators, resolve_paths
+from creatorpulse.db import connect
 
 logger = logging.getLogger("creatorpulse")
 
@@ -27,10 +29,13 @@ def run_collect(config_path: Path, db_path: Path) -> int:
         return 1
     creators = load_creators(config_path)
     logger.info("Loaded %d creators", len(creators))
-    logger.warning("Collector body is not implemented yet; Phase 3 fills it in")
+    conn = connect(db_path, create=True)
+    result = collect_once(conn, creators)
+    conn.close()
+    logger.info("Run wrote %d rows with %d failures", result.rows_written, result.failure_count)
     elapsed = time.monotonic() - start
     logger.info("Run complete in %.2f seconds", elapsed)
-    return 0
+    return 0 if result.failure_count == 0 else 1
 
 
 def main(argv: list[str] | None = None) -> int:

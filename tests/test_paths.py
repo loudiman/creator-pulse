@@ -5,9 +5,12 @@ assertions target resolve_paths()'s behavior given environment state, never the
 OS mechanism (systemd) that would set that state on a real box.
 """
 
+import json
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
+import requests
 
 from creatorpulse.cli import run_collect
 from creatorpulse.config import DEFAULT_CONFIG_PATH, DEFAULT_DB_PATH, resolve_paths
@@ -59,11 +62,22 @@ def test_resolve_paths_empty_string_treated_as_unset(monkeypatch: pytest.MonkeyP
 
 
 def test_run_collect_logs_both_resolved_paths(
-    caplog: pytest.LogCaptureFixture, tmp_path: Path
+    caplog: pytest.LogCaptureFixture, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = tmp_path / "creators.yaml"
     config_path.write_text(CREATORS_YAML, encoding="utf-8")
     db_path = tmp_path / "creatorpulse.db"
+
+    # Phase 3 made run_collect's seam real (config -> registry -> a real fetch -> a real
+    # row). Fake the one HTTP call the same way tests/test_collector.py does, so this
+    # pre-existing test still runs against fixtures only, never a live network call.
+    monkeypatch.setenv("YOUTUBE_API_KEY", "fake-key-for-test")
+    fixture = Path(__file__).resolve().parent / "fixtures" / "youtube" / "channel_ok.json"
+    response = Mock(spec=requests.Response)
+    response.status_code = 200
+    response.json.return_value = json.loads(fixture.read_text(encoding="utf-8"))
+    response.raise_for_status.return_value = None
+    monkeypatch.setattr("creatorpulse.sources.youtube.requests.get", lambda *a, **kw: response)
 
     with caplog.at_level("INFO", logger="creatorpulse"):
         run_collect(config_path, db_path)
