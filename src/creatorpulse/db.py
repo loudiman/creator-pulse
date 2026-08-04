@@ -54,15 +54,38 @@ VALUES (:started_at, :finished_at, :rows_written, :failure_count);
 """
 
 
-def connect(db_path: Path, *, create: bool) -> sqlite3.Connection:
-    """Open db_path. create=True runs the idempotent DDL; create=False lands in 03-05."""
-    if not create:
-        raise NotImplementedError("connect(create=False) lands in 03-05")
+class DatabaseNotInitialized(Exception):
+    """Raised by connect(create=False) when the file or its metrics table is absent (D-04)."""
 
-    conn = sqlite3.connect(str(db_path), timeout=5.0)
+
+def connect(db_path: Path, *, create: bool) -> sqlite3.Connection:
+    """Open db_path. create=True runs the idempotent DDL; create=False raises
+    DatabaseNotInitialized rather than silently creating an empty database at the wrong path."""
+    if create:
+        conn = sqlite3.connect(str(db_path), timeout=5.0)
+    else:
+        # sqlite3.connect raises OperationalError on a missing file under this read-only URI
+        # — this is the "raise a named error" mechanism D-04 asks for (verified live,
+        # 03-RESEARCH.md). as_posix() keeps a Windows path from producing backslashes in a URI.
+        uri = f"file:{db_path.as_posix()}?mode=rw"
+        try:
+            conn = sqlite3.connect(uri, uri=True, timeout=5.0)
+        except sqlite3.OperationalError as exc:
+            raise DatabaseNotInitialized(f"database file not found: {db_path}") from exc
+
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA busy_timeout = 5000")
-    conn.executescript(SCHEMA_DDL)
+
+    if create:
+        conn.executescript(SCHEMA_DDL)
+    else:
+        cursor = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='metrics'"
+        )
+        if cursor.fetchone() is None:
+            conn.close()  # close before raising — an open handle locks the file on Windows
+            raise DatabaseNotInitialized(f"metrics table not found in {db_path}")
+
     return conn
 
 
