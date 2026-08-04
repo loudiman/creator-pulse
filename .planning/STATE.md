@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Collector Core & API Sources
 status: executing
-stopped_at: Completed 03-06-PLAN.md
-last_updated: "2026-08-04T17:40:58.152Z"
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-08-04T17:58:53.556Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 3 (Collector Core & API Sources) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-08-05 — Phase 3 execution started
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [████████░░] 75%
 | Phase 03 P01 | 15min | 3 tasks | 8 files |
 | Phase 03 P02 | 25min | 2 tasks | 8 files |
 | Phase 03 P06 | 20min | 1 tasks | 3 files |
+| Phase 03 P04 | 20min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: test_paths.py needed the same fixture/env mocking as test_collector.py since cli.py's seam is no longer a stub
 - [Phase ?]: sources/_retry.py: retry() wraps YouTube's requests.get call, narrow D-13 list (Timeout/ConnErr/429/5xx), fixed 2s/4s backoff (D-14); _token sentinel documented for deferred 03-03 Twitch token mint
 - [Phase ?]: retry() uses PEP 695 generic syntax (def retry[**P](...)) instead of module-level ParamSpec — ruff UP047 rejects legacy form on py312 target
+- [Phase ?]: validate() checks source keys against KNOWN_PLATFORMS not FETCHERS — tiktok/twitch stay known-but-unregistered and skip cleanly, only a genuine typo fails
+- [Phase ?]: Import KNOWN_PLATFORMS via module-qualified 'from creatorpulse import sources as source_registry' so config.py has exactly one grep-able KNOWN_PLATFORMS line, matching the plan's own acceptance gate
 
 ### Pending Todos
 
@@ -119,6 +122,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-04T17:40:58.127Z
-Stopped at: Completed 03-06-PLAN.md
+Last session: 2026-08-04T17:58:53.530Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None

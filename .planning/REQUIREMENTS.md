@@ -11,9 +11,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Configuration
 
-- [ ] **CFG-01**: Operator can add a creator by editing `creators.yaml` — no code change required
-- [ ] **CFG-02**: Each creator entry declares its platform and that platform's identifier (YouTube handle or channel ID, Twitch login, TikTok username)
-- [ ] **CFG-03**: An invalid or incomplete `creators.yaml` fails at startup with a message naming the offending creator and field, not a bare traceback
+- [x] **CFG-01**: Operator can add a creator by editing `creators.yaml` — no code change required
+- [x] **CFG-02**: Each creator entry declares its platform and that platform's identifier (YouTube handle or channel ID, Twitch login, TikTok username)
+- [x] **CFG-03**: An invalid or incomplete `creators.yaml` fails at startup with a message naming the offending creator and field, not a bare traceback
 
 ### Sources
 
@@ -140,9 +140,9 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 3: Collector Core & API Sources | Pending |
-| CFG-02 | Phase 3: Collector Core & API Sources | Pending |
-| CFG-03 | Phase 3: Collector Core & API Sources | Pending |
+| CFG-01 | Phase 3: Collector Core & API Sources | Complete |
+| CFG-02 | Phase 3: Collector Core & API Sources | Complete |
+| CFG-03 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-01 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-02 | Phase 3: Collector Core & API Sources | Blocked (external — Twitch 2FA) |
 | SRC-03 | Phase 4: Playwright & Sheets | Pending |
