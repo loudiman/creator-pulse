@@ -39,12 +39,12 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DATA-02**: Re-running the collector on the same day updates existing rows rather than duplicating them — total row count is unchanged
 - [x] **DATA-03**: Every run writes a row to `runs` recording start time, duration, rows written, and failure count
 - [x] **DATA-04**: Previous days' rows are never overwritten by a later run — full daily history stays queryable
-- [ ] **DATA-05**: The collector (writer) and the Discord bot (reader) can use the database concurrently without lock errors
+- [x] **DATA-05**: The collector (writer) and the Discord bot (reader) can use the database concurrently without lock errors
 
 ### Collection Run
 
-- [ ] **RUN-01**: One creator or one source failing does not abort the run — all remaining work still completes
-- [ ] **RUN-02**: Each failure is logged with creator, source, and cause, and counted in that run's `runs` row
+- [x] **RUN-01**: One creator or one source failing does not abort the run — all remaining work still completes
+- [x] **RUN-02**: Each failure is logged with creator, source, and cause, and counted in that run's `runs` row
 - [x] **RUN-03**: The collector runs unattended on a daily systemd timer *(human-built: unit and timer files)*
 - [x] **RUN-04**: Run output is readable after the fact via `journalctl -u <unit>`
 - [x] **RUN-05**: `metric_date` is computed once per run in UTC, so a run slipping past midnight cannot split one run across two dates
@@ -84,9 +84,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **OPS-02**: `ruff check .` passes clean
 - [x] **OPS-03**: `mypy src/` passes clean
 - [x] **OPS-04**: `pytest` passes running only against saved fixtures — no live network calls in the suite
-- [ ] **OPS-05**: Tests cover idempotency — run the collector twice, assert row count unchanged
+- [x] **OPS-05**: Tests cover idempotency — run the collector twice, assert row count unchanged
 - [x] **OPS-06**: Tests cover normalisation — a saved fixture in produces the expected record out, for each source
-- [ ] **OPS-07**: Tests cover failure isolation — one source raises, the run still completes, the failure is logged
+- [x] **OPS-07**: Tests cover failure isolation — one source raises, the run still completes, the failure is logged
 - [ ] **OPS-08**: README explains the architecture with a diagram and records the design decisions behind it
 - [ ] **OPS-09**: Build journal records what broke, what was decided, and what agent proposals were rejected and why
 
@@ -152,9 +152,9 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DATA-02 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-03 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-04 | Phase 3: Collector Core & API Sources | Complete |
-| DATA-05 | Phase 3: Collector Core & API Sources | Pending |
-| RUN-01 | Phase 3: Collector Core & API Sources | Pending |
-| RUN-02 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-05 | Phase 3: Collector Core & API Sources | Complete |
+| RUN-01 | Phase 3: Collector Core & API Sources | Complete |
+| RUN-02 | Phase 3: Collector Core & API Sources | Complete |
 | RUN-03 | Phase 2: VPS & systemd | Complete |
 | RUN-04 | Phase 2: VPS & systemd | Complete |
 | RUN-05 | Phase 3: Collector Core & API Sources | Complete |
@@ -180,9 +180,9 @@ Which phases cover which requirements. Populated during roadmap creation.
 | OPS-02 | Phase 1: Skeleton | Complete |
 | OPS-03 | Phase 1: Skeleton | Complete |
 | OPS-04 | Phase 1: Skeleton | Complete |
-| OPS-05 | Phase 3: Collector Core & API Sources | Pending |
+| OPS-05 | Phase 3: Collector Core & API Sources | Complete |
 | OPS-06 | Phase 3: Collector Core & API Sources | Complete |
-| OPS-07 | Phase 3: Collector Core & API Sources | Pending |
+| OPS-07 | Phase 3: Collector Core & API Sources | Complete |
 | OPS-08 | Phase 7: Reliability & Docs | Pending |
 | OPS-09 | Phase 7: Reliability & Docs | Pending |
 

@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 3
 current_phase_name: Collector Core & API Sources
-status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-08-04T17:58:53.556Z"
+status: verifying
+stopped_at: Completed 03-05-PLAN.md (phase 3 PARTIAL — automated coverage green, human-observed UAT outstanding)
+last_updated: "2026-08-04T18:14:28.138Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 Phase: 3 (Collector Core & API Sources) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-05 — Phase 3 execution started
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [████████░░] 83%
 | Phase 03 P02 | 25min | 2 tasks | 8 files |
 | Phase 03 P06 | 20min | 1 tasks | 3 files |
 | Phase 03 P04 | 20min | 2 tasks | 3 files |
+| Phase 03 P05 | 30min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: retry() uses PEP 695 generic syntax (def retry[**P](...)) instead of module-level ParamSpec — ruff UP047 rejects legacy form on py312 target
 - [Phase ?]: validate() checks source keys against KNOWN_PLATFORMS not FETCHERS — tiktok/twitch stay known-but-unregistered and skip cleanly, only a genuine typo fails
 - [Phase ?]: Import KNOWN_PLATFORMS via module-qualified 'from creatorpulse import sources as source_registry' so config.py has exactly one grep-able KNOWN_PLATFORMS line, matching the plan's own acceptance gate
+- [Phase ?]: upsert_metric deliberately outside the per-pair try/except: a source-fetch failure isolates per D-15, a db write failure propagates through the outer try/finally instead of being counted per-pair
+- [Phase ?]: Task 3 precondition re-checked and confirmed unmet (no SSH, no env, no credentials) — 03-UAT.md all 5 entries PENDING with not_closed_reason and close-later commands, Phase 3 closes PARTIAL
 
 ### Pending Todos
 
@@ -111,6 +114,7 @@ None yet.
 - **Phase 4, unknowable in advance:** TikTok public page structure and selectors need live inspection. Budget for at least one iteration against saved HTML fixtures. Likely needs `--research-phase 4`.
 - **Ownership constraint, all phases:** Phases 2 and 5 are human-built end to end; Phase 6 is mixed. The agent must not generate systemd units, Apps Script code, or Discord Developer Portal configuration.
 - **Hard deadline:** ship Wed 5 Aug 2026, interview Thu 6 Aug 8:00pm PHT. Roughly one phase per day, part-time. Cut order is fixed in ROADMAP.md — slash commands, then TikTok, then History tab. Never cut Phases 2, 5, or 6.
+- Phase 3 human-observed real-data run outstanding (ROADMAP Definition of Green) — needs droplet SSH access and real YOUTUBE_API_KEY/TWITCH_CLIENT_ID/SECRET; see 03-UAT.md Gaps
 
 ## Deferred Items
 
@@ -122,6 +126,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-04T17:58:53.530Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-08-04T18:14:28.116Z
+Stopped at: Completed 03-05-PLAN.md (phase 3 PARTIAL — automated coverage green, human-observed UAT outstanding)
 Resume file: None

@@ -149,7 +149,7 @@ Notes:
   4. A metric the platform does not expose reads as NULL in the database, never 0 — and the Twitch `followers` column is NULL on every row for exactly this reason
   5. Every run appends a `runs` row with start, duration, rows written, and failure count, and the bot can read the database while the collector writes without a lock error
 
-**Plans**: 4/6 plans executed
+**Plans**: 5/6 plans executed
 
 > **SRC-02 deferred 2026-08-05, blocked external.** Registering a Twitch application requires 2FA on
 > the account, 2FA enrolment requires a mobile number, and the verification SMS does not arrive. No
@@ -175,7 +175,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 03-05-PLAN.md — Failure isolation, the `runs` row a dying run still writes, the bot's read path, and the five UAT proofs
+- [x] 03-05-PLAN.md — Failure isolation, the `runs` row a dying run still writes, the bot's read path, and the five UAT proofs
 - [ ] 03-03-PLAN.md — **DEFERRED (SRC-02)** — the Twitch source: one module, one registry line, `followers` NULL by design. Do not execute until Twitch credentials exist.
 
 Notes:
@@ -338,7 +338,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 |-------|----------------|--------|-----------|
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
-| 3. Collector Core & API Sources | 4/6 | In Progress|  |
+| 3. Collector Core & API Sources | 5/6 | In Progress|  |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
 | 5. Apps Script | 0/TBD | Not started | - |
 | 6. Discord Bot | 0/TBD | Not started | - |
