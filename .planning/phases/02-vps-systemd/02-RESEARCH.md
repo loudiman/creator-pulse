@@ -397,7 +397,9 @@ that produces that state — `resolve_paths()` doesn't know or care whether its 
 systemd's `Environment=` or a test harness:
 
 ```python
-def test_resolve_paths_uses_env_vars_when_set(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_resolve_paths_uses_env_vars_when_set(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("CREATORPULSE_CONFIG", str(tmp_path / "creators.yaml"))
     monkeypatch.setenv("CREATORPULSE_DB", str(tmp_path / "creatorpulse.db"))
     config_path, db_path = resolve_paths()

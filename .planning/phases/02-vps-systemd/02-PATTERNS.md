@@ -147,7 +147,9 @@ existing config unchanged. No new handler, no structured/JSON logging.
 **New tests needed (from RESEARCH.md Pitfall D, already vetted against this project's exact
 import names and pytest version 9.1.1)**:
 ```python
-def test_resolve_paths_uses_env_vars_when_set(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_resolve_paths_uses_env_vars_when_set(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     monkeypatch.setenv("CREATORPULSE_CONFIG", str(tmp_path / "creators.yaml"))
     monkeypatch.setenv("CREATORPULSE_DB", str(tmp_path / "creatorpulse.db"))
     config_path, db_path = resolve_paths()

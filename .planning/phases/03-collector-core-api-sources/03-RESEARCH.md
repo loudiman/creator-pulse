@@ -264,13 +264,15 @@ from datetime import date, datetime
 @dataclass(frozen=True, slots=True)
 class MetricRecord:
     creator_id: str
-    source: str            # "youtube" | "twitch" | "tiktok"
+    source: str  # "youtube" | "twitch" | "tiktok"
     metric_date: date
     followers: int | None
     views: int | None
     likes: int | None
-    video_count: int | None   # D-01 — lifetime count only; Twitch always NULL (D-06)
-    is_live: int | None       # D-01 — 1/0 for Twitch, NULL elsewhere; INTEGER column, `int | None` under strict mypy
+    video_count: int | None  # D-01 — lifetime count only; Twitch always NULL (D-06)
+    is_live: (
+        int | None
+    )  # D-01 — 1/0 for Twitch, NULL elsewhere; INTEGER column, `int | None` under strict mypy
     collected_at: datetime
 ```
 
@@ -291,7 +293,7 @@ logger = logging.getLogger("creatorpulse")
 
 
 def run(conn, creators: list[Creator]) -> tuple[int, int]:
-    metric_date = datetime.now(UTC).date()   # RUN-05 — computed ONCE, before the loop
+    metric_date = datetime.now(UTC).date()  # RUN-05 — computed ONCE, before the loop
     started_at = datetime.now(UTC)
     rows_written = 0
     failures = 0
@@ -302,7 +304,8 @@ def run(conn, creators: list[Creator]) -> tuple[int, int]:
             if fetch is None:
                 logger.info(
                     "skip creator=%s source=%s reason=no_fetcher_registered",
-                    creator.id, source_name,
+                    creator.id,
+                    source_name,
                 )
                 continue  # D-09/D-10 — not a row, not a failure
             try:
@@ -310,7 +313,9 @@ def run(conn, creators: list[Creator]) -> tuple[int, int]:
             except Exception as exc:
                 logger.error(
                     "fetch failed creator=%s source=%s cause=%s",
-                    creator.id, source_name, exc,
+                    creator.id,
+                    source_name,
+                    exc,
                 )
                 failures += 1
                 continue  # RUN-01 — remaining (creator, source) pairs still run
@@ -512,9 +517,7 @@ def with_retry(
             except _RETRYABLE_EXC:
                 if attempt == max_attempts:
                     raise
-            logger.info(
-                "retry creator=%s source=%s attempt=%d", creator_id, source, attempt
-            )
+            logger.info("retry creator=%s source=%s attempt=%d", creator_id, source, attempt)
             time.sleep(2.0 * attempt)  # 2s, then 4s — fixed, no jitter (D-14)
         raise AssertionError("unreachable")  # loop always returns or raises above
 
@@ -562,9 +565,9 @@ def fetch(handle: str, metric_date: date) -> MetricRecord:
         metric_date=metric_date,
         followers=followers,
         views=int(stats["viewCount"]),
-        likes=None,           # not exposed by this endpoint — D-01/D-02
+        likes=None,  # not exposed by this endpoint — D-01/D-02
         video_count=int(stats["videoCount"]),
-        is_live=None,         # YouTube live status is not fetched in this phase's scope
+        is_live=None,  # YouTube live status is not fetched in this phase's scope
         collected_at=datetime.now(UTC),
     )
 ```
@@ -635,16 +638,18 @@ def fetch(login: str, metric_date: date) -> MetricRecord:
         _STREAMS_URL, params={"user_login": login}, headers=headers, timeout=10
     )
     streams_resp.raise_for_status()
-    is_live = 1 if streams_resp.json()["data"] else 0  # empty data[] here means "offline", not "not found"
+    is_live = (
+        1 if streams_resp.json()["data"] else 0
+    )  # empty data[] here means "offline", not "not found"
 
     return MetricRecord(
         creator_id="",
         source="twitch",
         metric_date=metric_date,
-        followers=None,        # settled auth wall — NULL on every Twitch row, always
+        followers=None,  # settled auth wall — NULL on every Twitch row, always
         views=views,
         likes=None,
-        video_count=None,      # D-06 — Twitch has no lifetime video count
+        video_count=None,  # D-06 — Twitch has no lifetime video count
         is_live=is_live,
         collected_at=datetime.now(UTC),
     )
@@ -676,7 +681,9 @@ def validate(raw: dict) -> list[str]:
         sources = entry.get("sources")
 
         if not cid or not _SLUG_RE.match(cid):
-            problems.append(f"creator={entry.get('id', '<missing>')!r} field=id: invalid or missing slug")
+            problems.append(
+                f"creator={entry.get('id', '<missing>')!r} field=id: invalid or missing slug"
+            )
         elif cid in seen_ids:
             problems.append(f"creator={cid} field=id: duplicate id (also used by another entry)")
         else:
@@ -690,9 +697,13 @@ def validate(raw: dict) -> list[str]:
         else:
             for platform, identifier in sources.items():
                 if platform not in KNOWN_PLATFORMS:  # from sources/__init__.py, D-09 list 1
-                    problems.append(f"creator={cid or '<unknown>'} field=sources.{platform}: unknown platform")
+                    problems.append(
+                        f"creator={cid or '<unknown>'} field=sources.{platform}: unknown platform"
+                    )
                 if not str(identifier).strip():
-                    problems.append(f"creator={cid or '<unknown>'} field=sources.{platform}: empty identifier")
+                    problems.append(
+                        f"creator={cid or '<unknown>'} field=sources.{platform}: empty identifier"
+                    )
 
     return problems
 ```
