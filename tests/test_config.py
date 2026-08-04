@@ -4,11 +4,14 @@ plus validate()'s D-12 rule set (CFG-02, CFG-03).
 Fixtures only, no live network calls. Asserts on parsed Creator objects, not raw YAML text.
 """
 
+import sqlite3
 from pathlib import Path
 from typing import Any
 
 import pytest
+from test_collector import _fake_response
 
+from creatorpulse.cli import run_collect
 from creatorpulse.config import Creator, ValidationError, load_creators, load_raw, validate
 
 CREATORS_YAML = Path(__file__).resolve().parent.parent / "creators.yaml"
@@ -206,3 +209,57 @@ def test_load_raw_then_validate_on_malformed_tmp_path_file(tmp_path: Path) -> No
         validate(load_raw(bad_yaml))
 
     assert any("field=id" in p and "duplicate" in p for p in exc_info.value.problems)
+
+
+def test_run_collect_exit_code_2_on_validation_failure(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    bad_yaml = tmp_path / "creators.yaml"
+    bad_yaml.write_text(
+        "creators:\n"
+        "  - id: dup\n"
+        "    name: A\n"
+        "    sources:\n"
+        "      youtube: '@a'\n"
+        "  - id: dup\n"
+        "    name: B\n"
+        "    sources:\n"
+        "      youtub: '@b'\n",
+        encoding="utf-8",
+    )
+    db_path = tmp_path / "x.db"
+
+    with caplog.at_level("ERROR", logger="creatorpulse"):
+        exit_code = run_collect(bad_yaml, db_path)
+
+    assert exit_code == 2
+    problem_lines = [r.getMessage() for r in caplog.records if "field=" in r.getMessage()]
+    assert problem_lines
+    assert not db_path.exists()
+
+
+def test_run_collect_fourth_creator_needs_no_code_change(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("YOUTUBE_API_KEY", "fake-key-for-test")
+    fixture = Path(__file__).resolve().parent / "fixtures" / "youtube" / "channel_ok.json"
+    ok_response = _fake_response(fixture)
+    monkeypatch.setattr("creatorpulse.sources.youtube.requests.get", lambda *a, **kw: ok_response)
+
+    base_text = CREATORS_YAML.read_text(encoding="utf-8")
+    extra_entry = (
+        "  - id: fourth-creator\n    name: Fourth Creator\n    sources:\n      youtube: '@fourth'\n"
+    )
+    config_path = tmp_path / "creators.yaml"
+    config_path.write_text(base_text + extra_entry, encoding="utf-8")
+    db_path = tmp_path / "creatorpulse.db"
+
+    exit_code = run_collect(config_path, db_path)
+    assert exit_code == 0
+
+    conn = sqlite3.connect(db_path)
+    count = conn.execute(
+        "SELECT COUNT(*) FROM metrics WHERE creator_id = ?", ("fourth-creator",)
+    ).fetchone()[0]
+    conn.close()
+    assert count == 1

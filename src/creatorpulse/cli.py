@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from creatorpulse.collector import collect_once
-from creatorpulse.config import load_creators, resolve_paths
+from creatorpulse.config import ValidationError, load_creators, load_raw, resolve_paths, validate
 from creatorpulse.db import connect
 
 logger = logging.getLogger("creatorpulse")
@@ -22,11 +22,25 @@ def configure_logging() -> None:
 
 
 def run_collect(config_path: Path, db_path: Path) -> int:
+    """Run one collection.
+
+    Exit codes: 0 clean run; 1 config file not found, or the run completed with failures;
+    2 creators.yaml failed validation — nothing was opened, nothing was fetched (CFG-03, D-11).
+    """
     start = time.monotonic()
     logger.info("Starting collect run using config %s, database %s", config_path, db_path)
     if not config_path.exists():
         logger.error("Config file not found: %s", config_path)
         return 1
+
+    raw = load_raw(config_path)
+    try:
+        validate(raw)
+    except ValidationError as exc:
+        for problem in exc.problems:
+            logger.error("%s", problem)
+        return 2
+
     creators = load_creators(config_path)
     logger.info("Loaded %d creators", len(creators))
     conn = connect(db_path, create=True)

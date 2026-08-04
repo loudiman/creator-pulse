@@ -47,7 +47,7 @@ def resolve_paths() -> tuple[Path, Path]:
 
 
 def load_raw(path: Path) -> dict[str, Any]:
-    """Read creators.yaml and parse it with yaml.safe_load. No validation."""
+    """Read creators.yaml as UTF-8 and parse it into a dict. Nothing is checked yet."""
     text = path.read_text(encoding="utf-8")
     data: dict[str, Any] = yaml.safe_load(text)
     return data
