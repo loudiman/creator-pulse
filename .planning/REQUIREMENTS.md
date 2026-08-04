@@ -31,7 +31,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **SRC-03**: TikTok source returns follower count, total likes, and video count by reading the public profile page with Playwright
 - [x] **SRC-04**: Every source returns the same normalized record shape; a metric the platform does not expose is NULL, never 0
-- [ ] **SRC-05**: A source failing on a transient error retries with backoff before the attempt is recorded as failed
+- [x] **SRC-05**: A source failing on a transient error retries with backoff before the attempt is recorded as failed
 
 ### Storage
 
@@ -85,7 +85,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **OPS-03**: `mypy src/` passes clean
 - [x] **OPS-04**: `pytest` passes running only against saved fixtures — no live network calls in the suite
 - [ ] **OPS-05**: Tests cover idempotency — run the collector twice, assert row count unchanged
-- [ ] **OPS-06**: Tests cover normalisation — a saved fixture in produces the expected record out, for each source
+- [x] **OPS-06**: Tests cover normalisation — a saved fixture in produces the expected record out, for each source
 - [ ] **OPS-07**: Tests cover failure isolation — one source raises, the run still completes, the failure is logged
 - [ ] **OPS-08**: README explains the architecture with a diagram and records the design decisions behind it
 - [ ] **OPS-09**: Build journal records what broke, what was decided, and what agent proposals were rejected and why
@@ -147,7 +147,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SRC-02 | Phase 3: Collector Core & API Sources | Blocked (external — Twitch 2FA) |
 | SRC-03 | Phase 4: Playwright & Sheets | Pending |
 | SRC-04 | Phase 3: Collector Core & API Sources | Complete |
-| SRC-05 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-05 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-01 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-02 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-03 | Phase 3: Collector Core & API Sources | Complete |
@@ -181,7 +181,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | OPS-03 | Phase 1: Skeleton | Complete |
 | OPS-04 | Phase 1: Skeleton | Complete |
 | OPS-05 | Phase 3: Collector Core & API Sources | Pending |
-| OPS-06 | Phase 3: Collector Core & API Sources | Pending |
+| OPS-06 | Phase 3: Collector Core & API Sources | Complete |
 | OPS-07 | Phase 3: Collector Core & API Sources | Pending |
 | OPS-08 | Phase 7: Reliability & Docs | Pending |
 | OPS-09 | Phase 7: Reliability & Docs | Pending |

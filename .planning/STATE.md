@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Collector Core & API Sources
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-08-04T17:34:11.732Z"
+stopped_at: Completed 03-06-PLAN.md
+last_updated: "2026-08-04T17:40:58.152Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 3 (Collector Core & API Sources) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-08-05 — Phase 3 execution started
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [███████░░░] 67%
 | Phase 02-vps-systemd P03 | 20min | 2 tasks | 1 files |
 | Phase 03 P01 | 15min | 3 tasks | 8 files |
 | Phase 03 P02 | 25min | 2 tasks | 8 files |
+| Phase 03 P06 | 20min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: Task 1 option-a confirmed: nine-column metrics shape ships with video_count/is_live, engagement_rate removed (advisory gate, pre-resolved)
 - [Phase ?]: youtube.py uses data.get('items') not data['items'] — channel_not_found.json has no items key at all, raises named ChannelNotFound
 - [Phase ?]: test_paths.py needed the same fixture/env mocking as test_collector.py since cli.py's seam is no longer a stub
+- [Phase ?]: sources/_retry.py: retry() wraps YouTube's requests.get call, narrow D-13 list (Timeout/ConnErr/429/5xx), fixed 2s/4s backoff (D-14); _token sentinel documented for deferred 03-03 Twitch token mint
+- [Phase ?]: retry() uses PEP 695 generic syntax (def retry[**P](...)) instead of module-level ParamSpec — ruff UP047 rejects legacy form on py312 target
 
 ### Pending Todos
 
@@ -116,6 +119,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-04T17:34:11.703Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-08-04T17:40:58.127Z
+Stopped at: Completed 03-06-PLAN.md
 Resume file: None
