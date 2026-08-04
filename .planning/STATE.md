@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 3
 current_phase_name: Collector Core & API Sources
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-08-04T17:21:20.814Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-08-04T17:34:11.732Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 3 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 3 (Collector Core & API Sources) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-08-05 — Phase 3 execution started
 
-Progress: [██████░░░░] 58%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [██████░░░░] 58%
 | Phase 02-vps-systemd P02 | 25min | 3 tasks | 1 files |
 | Phase 02-vps-systemd P03 | 20min | 2 tasks | 1 files |
 | Phase 03 P01 | 15min | 3 tasks | 8 files |
+| Phase 03 P02 | 25min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: systemd-analyze calendar validates a CLI string, not the loaded unit — stale test schedule caught and corrected via systemctl cat before entry 4 closed
 - [Phase ?]: channel_not_found.json items key is absent entirely (not empty list) — 03-02 parser must use data.get('items')
 - [Phase ?]: OPS-06 not marked complete — plan frontmatter notes it is only partly satisfied by YouTube fixtures alone
+- [Phase ?]: Task 1 option-a confirmed: nine-column metrics shape ships with video_count/is_live, engagement_rate removed (advisory gate, pre-resolved)
+- [Phase ?]: youtube.py uses data.get('items') not data['items'] — channel_not_found.json has no items key at all, raises named ChannelNotFound
+- [Phase ?]: test_paths.py needed the same fixture/env mocking as test_collector.py since cli.py's seam is no longer a stub
 
 ### Pending Todos
 
@@ -112,6 +116,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-04T17:21:20.684Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-08-04T17:34:11.703Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None

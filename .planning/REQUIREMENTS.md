@@ -17,7 +17,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Sources
 
-- [ ] **SRC-01**: YouTube source returns subscriber count, total view count, and video count for a configured channel via YouTube Data API v3 using an API key
+- [x] **SRC-01**: YouTube source returns subscriber count, total view count, and video count for a configured channel via YouTube Data API v3 using an API key
 - [ ] **SRC-02**: Twitch source returns summed recent-VOD view count and current live status for a configured channel using an app access token *(BLOCKED-EXTERNAL as of 2026-08-05 — see note below)*
 
   > **SRC-02 is blocked on Twitch account 2FA, not on effort or design.** Registering an application
@@ -28,16 +28,17 @@ Requirements for initial release. Each maps to roadmap phases.
   > unexecuted; the source layer's `Protocol` plus `FETCHERS` registry means wiring it in is one
   > registry line once credentials exist. This is the second time Twitch has walled this project off —
   > the first was the follower-count endpoint requiring a broadcaster user token (see Out of Scope).
+
 - [ ] **SRC-03**: TikTok source returns follower count, total likes, and video count by reading the public profile page with Playwright
-- [ ] **SRC-04**: Every source returns the same normalized record shape; a metric the platform does not expose is NULL, never 0
+- [x] **SRC-04**: Every source returns the same normalized record shape; a metric the platform does not expose is NULL, never 0
 - [ ] **SRC-05**: A source failing on a transient error retries with backoff before the attempt is recorded as failed
 
 ### Storage
 
-- [ ] **DATA-01**: Metrics persist to SQLite with one row per creator, per source, per date
-- [ ] **DATA-02**: Re-running the collector on the same day updates existing rows rather than duplicating them — total row count is unchanged
-- [ ] **DATA-03**: Every run writes a row to `runs` recording start time, duration, rows written, and failure count
-- [ ] **DATA-04**: Previous days' rows are never overwritten by a later run — full daily history stays queryable
+- [x] **DATA-01**: Metrics persist to SQLite with one row per creator, per source, per date
+- [x] **DATA-02**: Re-running the collector on the same day updates existing rows rather than duplicating them — total row count is unchanged
+- [x] **DATA-03**: Every run writes a row to `runs` recording start time, duration, rows written, and failure count
+- [x] **DATA-04**: Previous days' rows are never overwritten by a later run — full daily history stays queryable
 - [ ] **DATA-05**: The collector (writer) and the Discord bot (reader) can use the database concurrently without lock errors
 
 ### Collection Run
@@ -46,7 +47,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **RUN-02**: Each failure is logged with creator, source, and cause, and counted in that run's `runs` row
 - [x] **RUN-03**: The collector runs unattended on a daily systemd timer *(human-built: unit and timer files)*
 - [x] **RUN-04**: Run output is readable after the fact via `journalctl -u <unit>`
-- [ ] **RUN-05**: `metric_date` is computed once per run in UTC, so a run slipping past midnight cannot split one run across two dates
+- [x] **RUN-05**: `metric_date` is computed once per run in UTC, so a run slipping past midnight cannot split one run across two dates
 
 ### Sheet
 
@@ -142,21 +143,21 @@ Which phases cover which requirements. Populated during roadmap creation.
 | CFG-01 | Phase 3: Collector Core & API Sources | Pending |
 | CFG-02 | Phase 3: Collector Core & API Sources | Pending |
 | CFG-03 | Phase 3: Collector Core & API Sources | Pending |
-| SRC-01 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-01 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-02 | Phase 3: Collector Core & API Sources | Blocked (external — Twitch 2FA) |
 | SRC-03 | Phase 4: Playwright & Sheets | Pending |
-| SRC-04 | Phase 3: Collector Core & API Sources | Pending |
+| SRC-04 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-05 | Phase 3: Collector Core & API Sources | Pending |
-| DATA-01 | Phase 3: Collector Core & API Sources | Pending |
-| DATA-02 | Phase 3: Collector Core & API Sources | Pending |
-| DATA-03 | Phase 3: Collector Core & API Sources | Pending |
-| DATA-04 | Phase 3: Collector Core & API Sources | Pending |
+| DATA-01 | Phase 3: Collector Core & API Sources | Complete |
+| DATA-02 | Phase 3: Collector Core & API Sources | Complete |
+| DATA-03 | Phase 3: Collector Core & API Sources | Complete |
+| DATA-04 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-05 | Phase 3: Collector Core & API Sources | Pending |
 | RUN-01 | Phase 3: Collector Core & API Sources | Pending |
 | RUN-02 | Phase 3: Collector Core & API Sources | Pending |
 | RUN-03 | Phase 2: VPS & systemd | Complete |
 | RUN-04 | Phase 2: VPS & systemd | Complete |
-| RUN-05 | Phase 3: Collector Core & API Sources | Pending |
+| RUN-05 | Phase 3: Collector Core & API Sources | Complete |
 | SHEET-01 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-02 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-03 | Phase 4: Playwright & Sheets | Pending |
