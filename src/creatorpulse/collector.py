@@ -1,6 +1,6 @@
-"""Orchestration loop. No HTTP knowledge, no SQL knowledge — this task's loop is the happy
-path and the skip path; the per-pair try/except and the try/finally runs-row guarantee on a
-mid-run raise are 03-05's work."""
+"""Orchestration loop. No HTTP knowledge, no SQL knowledge — the loop's per-pair try/except
+isolates one source's failure from the rest of the run (D-15/RUN-01), and the outer
+try/finally guarantees a runs row even when the job dies part way through (D-16/DATA-03)."""
 
 import dataclasses
 import logging
@@ -21,21 +21,42 @@ def collect_once(conn: sqlite3.Connection, creators: list[Creator]) -> RunResult
     rows_written = 0
     failure_count = 0
 
-    for creator in creators:
-        for source_name, identifier in creator.sources.items():
-            fetch = FETCHERS.get(source_name)
-            if fetch is None:
-                logger.info(
-                    "skip creator=%s source=%s reason=no_fetcher_registered",
-                    creator.id,
-                    source_name,
-                )
-                continue  # D-09/D-10 — a skip is neither a row nor a failure
-            record = fetch(identifier, metric_date)
-            record = dataclasses.replace(record, creator_id=creator.id)
-            upsert_metric(conn, record)
-            rows_written += 1
+    try:
+        for creator in creators:
+            for source_name, identifier in creator.sources.items():
+                fetch = FETCHERS.get(source_name)
+                if fetch is None:
+                    logger.info(
+                        "skip creator=%s source=%s reason=no_fetcher_registered",
+                        creator.id,
+                        source_name,
+                    )
+                    continue  # D-09/D-10 — a skip is neither a row nor a failure
 
-    finished_at = datetime.now(UTC)
-    write_run_row(conn, started_at, finished_at, rows_written, failure_count)
+                try:
+                    record = fetch(identifier, metric_date)
+                except Exception as exc:  # D-15 — one boundary per (creator, source) pair
+                    failure_count += 1
+                    logger.error(
+                        "fetch failed creator=%s source=%s cause=%s: %s",
+                        creator.id,
+                        source_name,
+                        type(exc).__name__,
+                        str(exc),
+                    )
+                    continue  # no cross-pair state, no short-circuit (D-15)
+
+                record = dataclasses.replace(record, creator_id=creator.id)
+                # A write failure here is systemic, not per-source: deliberately outside the
+                # per-pair boundary above, so it propagates through the finally below instead
+                # of being counted as one more source failure (D-16).
+                upsert_metric(conn, record)
+                rows_written += 1
+    finally:
+        finished_at = datetime.now(UTC)
+        # If write_run_row itself raises here, it replaces the exception in flight — Python's
+        # documented behavior, and the correct outcome: an unwritable database is the more
+        # important error to surface.
+        write_run_row(conn, started_at, finished_at, rows_written, failure_count)
+
     return RunResult(rows_written=rows_written, failure_count=failure_count)
