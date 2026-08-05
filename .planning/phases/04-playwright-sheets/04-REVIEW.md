@@ -186,6 +186,7 @@ auto-close; use `contextlib.closing()` if `connect()` doesn't return something t
 itself:
 ```python
 from contextlib import closing
+
 with closing(connect(db_path, create=False)) as sheets_conn:
     sheets.sync(sheets_conn, sheet_id, keyfile)
 ```

@@ -27,7 +27,9 @@ no Playwright analogs mapped.
 Open read-only, `create=False`, so a bad path raises the existing named exception rather than
 silently creating an empty DB:
 ```python
-conn = connect(db_path, create=False)  # raises DatabaseNotInitialized (db.py) — do not catch and mask it
+conn = connect(
+    db_path, create=False
+)  # raises DatabaseNotInitialized (db.py) — do not catch and mask it
 ```
 Use the existing index for the delta query — `db.py:23-24`:
 ```sql
@@ -86,7 +88,13 @@ orchestrates the three and calls `worksheet.update`).
 opposite for the Sheets write, so do NOT copy the per-pair swallow pattern here, only the log-line
 shape:
 ```python
-logger.error("fetch failed creator=%s source=%s cause=%s: %s", creator.id, source_name, type(exc).__name__, str(exc))
+logger.error(
+    "fetch failed creator=%s source=%s cause=%s: %s",
+    creator.id,
+    source_name,
+    type(exc).__name__,
+    str(exc),
+)
 ```
 becomes, in `sheets.py` (log then re-raise, not continue):
 ```python

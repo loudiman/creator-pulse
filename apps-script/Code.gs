@@ -1,0 +1,158 @@
+/**
+ * CreatorPulse — Phase 5 Apps Script layer.
+ *
+ * Synced to the Sheet by pasting this file whole into Extensions > Apps Script > Code.gs —
+ * never hand-edited in the browser (D-04). Bound to the "Dashboard" tab; column G, STATUS_COLUMN
+ * below, is the one cell range a human owns and this file only ever reads, never writes.
+ */
+
+const DASHBOARD_TAB = 'Dashboard'; // Phase 4 D-03 — the frozen tab name, never re-derived
+const STATUS_COLUMN = 7; // column G, frozen by Phase 4 D-03
+const CREATOR_COLUMN = 1; // column A — the name D-14's message uses
+const SOURCE_COLUMN = 2; // column B — the other name D-14's message uses
+const FIRST_DATA_ROW = 2; // row 1 is the header; an edit to row 1 of G is not a Status edit
+const WEBHOOK_PROPERTY = 'DISCORD_WEBHOOK_URL'; // D-13 — read at call time, never hardcoded
+
+// 05-02 appends STALE_THRESHOLD_HOURS, WATCHDOG_HOUR, SCRIPT_TIMEZONE, DELTA_RANGE,
+// POSITIVE_BACKGROUND, NEGATIVE_BACKGROUND beside these. Leave room; do not pre-declare them.
+
+/**
+ * Simple trigger — builds the menu. Needs no authorization, so it runs for anyone who opens
+ * the Sheet, whether or not anybody has installed anything yet. Reads no Sheet data: an
+ * empty, header-only, or entirely absent Dashboard tab cannot suppress this menu.
+ */
+function onOpen(e) {
+  SpreadsheetApp.getUi()
+    .createMenu('CreatorPulse')
+    .addItem('Install triggers', 'installTriggers')
+    .addToUi();
+  // 05-02 inserts two more addItem calls ahead of this one, in D-09's stated order.
+}
+
+/**
+ * The duplicate-guard D-09 pays for. Deletes every trigger this script project owns before
+ * creating any — the enumeration below returns only this project's triggers, so the delete
+ * pass cannot touch anything else. Without it, clicking this item twice would create two
+ * onEdit triggers and one Status edit would post to Discord twice.
+ */
+function installTriggers() {
+  const ss = SpreadsheetApp.getActive();
+
+  let removedCount = 0;
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    ScriptApp.deleteTrigger(trigger);
+    removedCount++;
+  });
+
+  ScriptApp.newTrigger('onStatusEdit').forSpreadsheet(ss).onEdit().create();
+  const createdCount = 1; // 05-02 adds the time-driven trigger beside this one
+
+  ss.toast(
+    'Removed ' + removedCount + ' trigger(s), created ' + createdCount + '.',
+    'CreatorPulse'
+  );
+}
+
+/**
+ * The installable onEdit target (SCRIPT-03). Deliberately NOT named after the simple-trigger
+ * event name — that name cannot reach UrlFetchApp and the failure is silent from the editing
+ * user's point of view. Only ever created through installTriggers() above.
+ */
+function onStatusEdit(e) {
+  const range = e.range;
+  const sheet = range.getSheet();
+
+  // A gspread/API write never fires an edit event at all — only a human edit through the
+  // Sheets UI does — so the daily sync can never reach this handler.
+  if (
+    sheet.getName() !== DASHBOARD_TAB ||
+    range.getColumn() !== STATUS_COLUMN ||
+    range.getRow() < FIRST_DATA_ROW
+  ) {
+    return;
+  }
+
+  const row = range.getRow();
+  const creator = sheet.getRange(row, CREATOR_COLUMN).getValue();
+  const source = sheet.getRange(row, SOURCE_COLUMN).getValue();
+
+  // D-15: a missing old value is rendered, never assumed — undefined for any multi-cell edit.
+  const oldValue = e.oldValue !== undefined ? e.oldValue : '(blank)';
+
+  // e.value is undefined both when the cell was cleared AND when the edit spanned multiple
+  // cells. Reading the cell back distinguishes the two, so a multi-cell paste never reports a
+  // clear that did not happen. Residual limit: a multi-cell edit reports only its top-left row.
+  let newValue;
+  if (e.value !== undefined) {
+    newValue = e.value;
+  } else {
+    const currentValue = range.getValue();
+    newValue = currentValue === '' || currentValue === null ? '(cleared)' : currentValue;
+  }
+
+  postToDiscord(creator + ' / ' + source + ' — Status: ' + oldValue + ' → ' + newValue);
+}
+
+/**
+ * D-13 — the webhook URL lives in Script Properties, never in this file. Falsy check rather
+ * than `=== null` since getProperty()'s return for an unset key is only assumed, not confirmed;
+ * a falsy check catches null, undefined, and empty string identically.
+ */
+function getWebhookUrl() {
+  const url = PropertiesService.getScriptProperties().getProperty(WEBHOOK_PROPERTY);
+  if (!url) {
+    throw new Error(
+      'Script Property ' +
+        WEBHOOK_PROPERTY +
+        ' is not set. Project Settings (gear icon) > Script Properties > add ' +
+        WEBHOOK_PROPERTY +
+        ' with the Discord webhook URL, then Save script properties.'
+    );
+  }
+  return url;
+}
+
+/**
+ * The shared poster — called by this plan's handler and by 05-02's watchdog. JSON.stringify
+ * escapes free-text Status content by construction, so a quote or backslash typed into a
+ * Status cell cannot break the request body. The empty mention-parse list below suppresses
+ * @everyone/@here/role pings, since the Sheet is link-editable (T-05-05).
+ */
+function postToDiscord(message) {
+  const webhookUrl = getWebhookUrl();
+  const response = UrlFetchApp.fetch(webhookUrl, {
+    method: 'post',
+    contentType: 'application/json',
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      content: message,
+      allowed_mentions: { parse: [] },
+    }),
+  });
+
+  const code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
+    // Log the response code and body only — never the webhook URL and never a raw thrown
+    // error that could carry it (T-05-02). No retry loop: this is one POST a handful of
+    // times a day, not a batch job.
+    console.error('Discord webhook returned ' + code + ': ' + response.getContentText());
+  }
+}
+
+/**
+ * RESEARCH.md Pitfall 4 — the phase's one genuine empirical unknown. Python writes column F
+ * as an ISO-8601 string with a +00:00 offset; whether that lands in Sheets as text or as a
+ * real Date under USER_ENTERED decides how 05-02's staleness arithmetic must read it. Getting
+ * it wrong fails in the dangerous direction: a NaN comparison is always false, so the watchdog
+ * would stay permanently and silently quiet. Run once from the editor's Run dropdown; no menu
+ * item calls this. Underscore-prefixed so its diagnostic status is visible at a glance.
+ */
+function _diagnoseTimestampType() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(DASHBOARD_TAB);
+  const raw = sheet.getRange(2, 6).getValue(); // F2 — the frozen "Last updated (UTC)" column
+
+  Logger.log('typeof: ' + typeof raw);
+  Logger.log('instanceof Date: ' + (raw instanceof Date));
+  Logger.log('raw value: ' + raw);
+  Logger.log('new Date(raw) is NaN: ' + isNaN(new Date(raw).getTime()));
+}

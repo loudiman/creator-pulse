@@ -51,7 +51,7 @@ style): A=1 Creator, B=2 Source, C=3 Followers, D=4 Views, E=5 Δ Views, F=6 Las
 ```python
 DELTA_PLACEHOLDER = "—"  # em dash; 04-02 puts a real number beside it
 ...
-DELTA_PLACEHOLDER if views is None or prev_views is None else views - prev_views,
+(DELTA_PLACEHOLDER if views is None or prev_views is None else views - prev_views,)
 ```
 This is the literal em-dash (U+2014, `—`), written into cell E as **text**, not a number, when no
 prior-day baseline exists. This is exactly why SCRIPT-04's `whenNumberGreaterThan`/`whenNumberLessThan`
@@ -125,6 +125,7 @@ right by relying on non-numeric skip rather than parsing the placeholder.
 ```python
 _RETRYABLE_EXC = (requests.Timeout, requests.ConnectionError)
 _RETRYABLE_STATUS = {429}
+
 
 def _is_retryable_status(status_code: int) -> bool:
     return status_code in _RETRYABLE_STATUS or status_code >= 500
