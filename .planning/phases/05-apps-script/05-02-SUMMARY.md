@@ -180,4 +180,8 @@ Recorded here since Task 3's verification necessarily left temporary state on th
 *Phase: 05-apps-script*
 *Completed: 2026-08-06*
 
-## Self-Check: PENDING
+## Self-Check: PASSED
+
+- FOUND: apps-script/Code.gs
+- FOUND: .planning/phases/05-apps-script/05-02-SUMMARY.md
+- FOUND: 6645cc2, f974f21, 180dc07, 2431303
