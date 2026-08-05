@@ -257,7 +257,8 @@ function checkFreshness() {
  * special case is written for that here, because Sheets already does the right thing.
  */
 function applyFormatting() {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(DASHBOARD_TAB);
+  const ss = SpreadsheetApp.getActive();
+  const sheet = ss.getSheetByName(DASHBOARD_TAB);
   const deltaRange = sheet.getRange(DELTA_RANGE);
 
   const positiveRule = SpreadsheetApp.newConditionalFormatRule()
@@ -275,7 +276,7 @@ function applyFormatting() {
   const rules = [positiveRule, negativeRule];
   sheet.setConditionalFormatRules(rules);
 
-  sheet.toast(rules.length + ' conditional format rule(s) applied to ' + DELTA_RANGE + '.', 'CreatorPulse');
+  ss.toast(rules.length + ' conditional format rule(s) applied to ' + DELTA_RANGE + '.', 'CreatorPulse');
 }
 
 /**
