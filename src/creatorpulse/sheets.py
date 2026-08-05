@@ -34,8 +34,13 @@ HEADERS: list[str] = [
 # answer. This one query yields the DISTINCT (creator_id, source) pairs D-01 names, plus each
 # pair's latest snapshot, in one pass.
 LATEST_ROWS_SQL = """
-SELECT m.creator_id, m.source, m.followers, m.views, m.collected_at
+SELECT m.creator_id, m.source, m.followers, m.views, m.collected_at, prev.views
 FROM metrics AS m
+LEFT JOIN metrics AS prev
+    -- keyed on (creator_id, metric_date): idx_metrics_creator_date's exact column pair
+    ON prev.creator_id = m.creator_id
+    AND prev.source = m.source
+    AND prev.metric_date = date(m.metric_date, '-1 day')
 WHERE m.metric_date = (
     SELECT MAX(m2.metric_date) FROM metrics AS m2
     WHERE m2.creator_id = m.creator_id AND m2.source = m.source
@@ -43,7 +48,7 @@ WHERE m.metric_date = (
 ORDER BY m.creator_id, m.source;
 """
 
-LatestRow = tuple[str, str, int | None, int | None, str]
+LatestRow = tuple[str, str, int | None, int | None, str, int | None]
 
 
 def fetch_latest_rows(conn: sqlite3.Connection) -> list[LatestRow]:
@@ -62,7 +67,7 @@ def build_dashboard_rows(rows: Sequence[LatestRow]) -> list[list[object]]:
     "the platform reported zero" and renders as the number zero. They must never merge.
     """
     values: list[list[object]] = [list(HEADERS)]
-    for creator_id, source, followers, views, collected_at in rows:
+    for creator_id, source, followers, views, collected_at, _prev_views in rows:
         values.append(
             [
                 creator_id,
