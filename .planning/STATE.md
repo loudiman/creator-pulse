@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: apps-script
 status: verifying
-stopped_at: Completed 05-03-PLAN.md (Task 1 executed; Task 2 checkpoint deliberately deferred to author, 2 UAT items open)
-last_updated: "2026-08-05T22:16:13.827Z"
+stopped_at: "Phase 5 verified PARTIAL — criterion 5 write-up and 09:00 fire open; ready for Phase 6"
+last_updated: "2026-08-05T22:21:30.165Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 05 execution started
 progress:
@@ -156,6 +156,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T22:16:01.063Z
-Stopped at: Completed 05-03-PLAN.md (Task 1 executed; Task 2 checkpoint deliberately deferred to author, 2 UAT items open)
-Resume file: None
+Last session: 2026-08-05T22:21:30.118Z
+Stopped at: Phase 5 verified PARTIAL — criterion 5 write-up and 09:00 fire open; ready for Phase 6
+Resume file: .planning/phases/05-apps-script/05-UAT.md
