@@ -29,7 +29,21 @@ Requirements for initial release. Each maps to roadmap phases.
   > registry line once credentials exist. This is the second time Twitch has walled this project off —
   > the first was the follower-count endpoint requiring a broadcaster user token (see Out of Scope).
 
-- [ ] **SRC-03**: TikTok source returns follower count, total likes, and video count by reading the public profile page with Playwright
+- [ ] **SRC-03**: TikTok source returns follower count, total likes, and video count by reading the public profile page with Playwright *(CUT as of 2026-08-05 — see note below, moved to v2 as V2-SRC-02)*
+
+  > **SRC-03 is cut, not blocked.** ROADMAP.md §"Cut Order" fixes TikTok as cut item 2, and it was
+  > exercised during Phase 4 discussion with roughly 23 hours left to ship. The reasoning is a
+  > schedule trade, not a technical one: Phase 5 (Apps Script) is human-built, marked never-cut, and
+  > is the author's largest gap, and a scraper whose selectors are unknowable in advance was the one
+  > remaining piece with open-ended cost. No `sources/tiktok.py`, no HTML fixtures, no `robots.txt`
+  > runtime check.
+  > `creators.yaml` keeps its `tiktok` entries **unchanged** — Phase 3 D-09's known-but-unregistered
+  > skip path logs one line per creator and continues, so no config edit was needed and none should
+  > be made. Re-adding the source is one module plus one registry line. Playwright stays in
+  > `pyproject.toml` and stays installed on the droplet for the same reason.
+  > "We shipped API-only, and here is the cut order that said to" is the intended interview answer.
+
+
 - [x] **SRC-04**: Every source returns the same normalized record shape; a metric the platform does not expose is NULL, never 0
 - [x] **SRC-05**: A source failing on a transient error retries with backoff before the attempt is recorded as failed
 
@@ -54,7 +68,18 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SHEET-01**: Dashboard tab shows one row per creator with the latest snapshot and its day-over-day delta
 - [ ] **SHEET-02**: Day-over-day delta is computed on view count; subscriber and follower counts are displayed but labelled coarse where the platform rounds them
 - [ ] **SHEET-03**: A creator with no prior-day row shows `—` for delta, never a delta computed against an assumed zero
-- [ ] **SHEET-04**: History tab appends one row per creator per day and is never rewritten
+- [ ] **SHEET-04**: History tab appends one row per creator per day and is never rewritten *(CUT as of 2026-08-05 — see note below, moved to v2 as V2-SHEET-01)*
+
+  > **SHEET-04 is cut.** Cut-order item 3, exercised alongside SRC-03 in the same Phase 4 discussion.
+  > **No data is lost by this** — the database keeps full daily history regardless (DATA-04), so what
+  > was cut is a *view* of that history, not the history itself. Phase 6's `/creator` trend command
+  > and any later backfill of the tab both read the same rows.
+  > The design is settled if it returns: one read of the tab's key column, diff against today's rows,
+  > one batched `append_rows` of only what is missing — two API calls, idempotent across same-day
+  > re-runs, roughly 30–40 lines plus a fixture test. Recorded in
+  > `.planning/phases/04-playwright-sheets/04-CONTEXT.md` §"Deferred Ideas".
+
+
 - [ ] **SHEET-05**: Sheet writes are batched — at most one write call per tab per run, never cell-by-cell
 - [ ] **SHEET-06**: The human-edited Status column survives a Dashboard refresh untouched
 - [ ] **SHEET-07**: A Sheet not shared with the service account fails with an explicit instruction naming the `client_email` to share it with, not a raw 403
@@ -104,9 +129,14 @@ Deferred to future release. Tracked but not in the current roadmap.
 - **V2-BOT-01**: Additional slash commands beyond `/creator` and `/status` (e.g. `/compare`, `/history`)
 - **V2-BOT-02**: Configurable per-creator alert thresholds instead of a single global ±20%
 
+### Sheet
+
+- **V2-SHEET-01**: History tab appending one row per creator per day, never rewritten — **was SHEET-04**, cut 2026-08-05 as cut-order item 3. Not a capability gap: the database already keeps full daily history (DATA-04), so this is a view waiting to be rendered. Design settled — one read of the key column, diff, one batched `append_rows`
+
 ### Sources
 
 - **V2-SRC-01**: A fourth data source — blocked by the deliberate 3-source cap, not by capability
+- **V2-SRC-02**: TikTok source via Playwright — **was SRC-03**, cut 2026-08-05 as cut-order item 2. Cut on schedule, not on capability or ethics. `creators.yaml` still declares `tiktok` for all three creators and Phase 3 D-09's skip path keeps that harmless, so the work is one module plus one registry line. Still bound by the public-pages-only rule: if the profile page needs evasion to load, the correct outcome remains dropping the source
 
 ### Operations
 
@@ -145,7 +175,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | CFG-03 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-01 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-02 | Phase 3: Collector Core & API Sources | Blocked (external — Twitch 2FA) |
-| SRC-03 | Phase 4: Playwright & Sheets | Pending |
+| SRC-03 | ~~Phase 4~~ — **CUT 2026-08-05** (cut-order item 2) | Cut → V2-SRC-02 |
 | SRC-04 | Phase 3: Collector Core & API Sources | Complete |
 | SRC-05 | Phase 3: Collector Core & API Sources | Complete |
 | DATA-01 | Phase 3: Collector Core & API Sources | Complete |
@@ -161,7 +191,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SHEET-01 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-02 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-03 | Phase 4: Playwright & Sheets | Pending |
-| SHEET-04 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-04 | ~~Phase 4~~ — **CUT 2026-08-05** (cut-order item 3) | Cut → V2-SHEET-01 |
 | SHEET-05 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-06 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-07 | Phase 4: Playwright & Sheets | Pending |
@@ -189,8 +219,9 @@ Which phases cover which requirements. Populated during roadmap creation.
 **Coverage:**
 
 - v1 requirements: 45 total
-- Mapped to phases: 45
-- Unmapped: 0 — full coverage, no orphans, no duplicates
+- Mapped to phases: 43
+- Cut 2026-08-05: 2 — SRC-03 (cut-order item 2), SHEET-04 (cut-order item 3). Both moved to v2
+- Unmapped: 0 — every requirement is either mapped or explicitly cut, no orphans, no duplicates
 
 **By phase:**
 
@@ -199,16 +230,17 @@ Which phases cover which requirements. Populated during roadmap creation.
 | 1. Skeleton | agent | 3 |
 | 2. VPS & systemd | human | 3 |
 | 3. Collector Core & API Sources | agent | 18 |
-| 4. Playwright & Sheets | agent | 8 |
+| 4. Playwright & Sheets | agent | 6 |
 | 5. Apps Script | human | 4 |
 | 6. Discord Bot | mixed | 7 |
 | 7. Reliability & Docs | mixed | 2 |
 
-Notes on two assignment calls:
+Notes on three assignment calls:
 
 - **OPS-02/03/04 sit in Phase 1** because that is where the gate is built. They are re-enforced at every subsequent phase via the Definition of Green in ROADMAP.md, not re-owned by later phases.
-- **OPS-06 (normalisation tests, "for each source") sits in Phase 3** alongside the two API sources. The TikTok fixture test is added in Phase 4 as part of SRC-03's own work rather than reopening OPS-06.
+- **OPS-06 (normalisation tests, "for each source") sits in Phase 3** alongside the two API sources. It was to gain a TikTok fixture test in Phase 4 as part of SRC-03's own work; **with SRC-03 cut, that addition is void and OPS-06 stands closed on the two API sources it already covers.** OPS-06 is not reopened.
+- **SRC-03 and SHEET-04 are cut, not re-parented.** No remaining phase in this milestone could take them before the interview, so both moved to v2. A verifier must not open gaps against them.
 
 ---
 *Requirements defined: 2026-07-29*
-*Last updated: 2026-07-29 after roadmap creation (traceability populated)*
+*Last updated: 2026-08-05 — SRC-03 and SHEET-04 cut per ROADMAP.md §"Cut Order" items 2 and 3, moved to v2; Phase 4 count 8 → 6*

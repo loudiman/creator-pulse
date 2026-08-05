@@ -21,8 +21,14 @@ The three human-built areas: VPS provisioning + systemd units/timers, the entire
 If behind schedule, cut in this order and no other:
 
 1. Extra slash commands (`/creator`, `/status` beyond the digest) — BOT-04, BOT-05
-2. TikTok / Playwright source — ship API-only — SRC-03
-3. History tab — SHEET-04
+2. ~~TikTok / Playwright source — ship API-only — SRC-03~~ — **CUT 2026-08-05**
+3. ~~History tab — SHEET-04~~ — **CUT 2026-08-05**
+
+**Items 2 and 3 are spent.** Both were cut during Phase 4 discussion with roughly 23 hours left,
+to protect Phase 5 (human-built, never cuttable, the author's largest gap). Nothing remains below
+item 3 — the next thing to give would be a whole phase, and Phases 2, 5, and 6 are marked
+never-cut. If the window tightens further, the correct move is to reduce Phase 7's rehearsal
+depth, not to reopen this list.
 
 **Never cut Phase 2 (VPS/systemd), Phase 5 (Apps Script), or Phase 6 (Discord bot).** Those three are the author's real gaps and the interview's real subject matter. A later replan that "optimises" them away has misunderstood the project.
 
@@ -50,7 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Skeleton** - Repo layout, toolchain, and the green gate that every later phase must pass (completed 2026-07-30)
 - [x] **Phase 2: VPS & systemd** - Provisioned box, timer, journal, and secrets that never touch the repo (completed 2026-08-04)
 - [x] **Phase 3: Collector Core & API Sources** - Normalized records land idempotently in SQLite from YouTube *(Twitch deferred — SRC-02 blocked on account 2FA)* (completed 2026-08-05)
-- [ ] **Phase 4: Playwright & Sheets** - TikTok scraped, and the Sheet becomes a readable view of the database
+- [ ] **Phase 4: Playwright & Sheets** - The Sheet becomes a readable view of the database *(TikTok and History tab cut 2026-08-05 — cut-order items 2 and 3)*
 - [ ] **Phase 5: Apps Script** - The Sheet gains a menu, formatting, and a two-way trip back to Discord
 - [ ] **Phase 6: Discord Bot** - Daily digest, failure alerts, and on-demand answers from the database
 - [ ] **Phase 7: Reliability & Docs** - The system survives being watched, and a stranger can read the README
@@ -191,32 +197,59 @@ Notes:
 
 ### Phase 4: Playwright & Sheets
 
-**Goal**: The third source works without an API, and the ops team gets a Sheet they can actually read
+**Goal**: The ops team gets a Sheet they can actually read
 **Mode:** mvp
 **UI hint**: no
 **Owner:** agent
 **Depends on**: Phase 3
-**Requirements**: SRC-03, SHEET-01, SHEET-02, SHEET-03, SHEET-04, SHEET-05, SHEET-06, SHEET-07
+**Requirements**: SHEET-01, SHEET-02, SHEET-03, SHEET-05, SHEET-06, SHEET-07
 **Success Criteria** (what must be TRUE):
 
-  1. The author opens the real Google Sheet after a real run and sees one Dashboard row per creator with the latest snapshot and its day-over-day delta on views — with subscriber/follower figures visibly labelled coarse
+  1. The author opens the real Google Sheet after a real run and sees one Dashboard row per creator-source pair with the latest snapshot and its day-over-day delta on views — with subscriber/follower figures visibly labelled coarse
   2. A creator with no prior-day row shows `—` for delta, not a number computed against zero
   3. The author types into the Status column, re-runs the collector, and the typed value is still there afterwards
-  4. The History tab gains exactly one row per creator per day and no existing row is rewritten
-  5. A TikTok profile page yields follower count, total likes, and video count into the database; a Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
+  4. A Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
 
 **Plans**: TBD
 
+> **SRC-03 and SHEET-04 cut 2026-08-05 — cut-order items 2 and 3, exercised.** With roughly 23 hours
+> to ship and Phase 5 still ahead (human-built, never cuttable, the author's largest gap), the fixed
+> cut order was applied as written rather than rediscovered under pressure. TikTok/Playwright is
+> gone: no `sources/tiktok.py`, no HTML fixtures, no `robots.txt` runtime check. The History tab is
+> gone: Dashboard only. `creators.yaml` keeps its `tiktok` entries unchanged and Phase 3 D-09's
+> known-but-unregistered skip path keeps them harmless, so re-adding the source later is one module
+> plus one registry line. The database keeps full daily history regardless (DATA-04), so cutting the
+> History *tab* loses a view, not data. Criteria dropped from five to four: old criterion 4 was the
+> History tab, and old criterion 5's TikTok clause is void — only its `client_email` half survives,
+> renumbered to 4. **The phase name is deliberately unchanged** — renaming it would change the slug
+> and orphan the `04-playwright-sheets/` directory the phase artifacts already live in.
+> See `.planning/phases/04-playwright-sheets/04-CONTEXT.md`.
+
 Notes:
 
-- **Highest pitfall density in the project** — 9 of 19 identified pitfalls land here. Budget the most slack and the most explicit verification.
-- Likely needs `/gsd-plan-phase --research-phase 4`. TikTok's live page structure and selectors are not knowable in advance and will need at least one iteration against saved HTML fixtures.
-- Never `.clear()` the Dashboard tab. Write only the DB-owned column range (e.g. `A2:F{n}`) so the human-edited Status column survives. Keep Status last in the column order — this layout is a contract with Phase 5.
-- One write call per tab per run. Build the full 2D array in memory first. Cell-by-cell looks fine at two rows and breaks in front of the interviewer.
-- Deltas computed in Python from the database, never as Sheet formulas.
-- Playwright: Chromium only, headless, sequential contexts (never concurrent), teardown in `finally`. Wait on a specific element, not page load. Raise on selector drift — never return `None` silently.
-- Public unauthenticated pages only, respect `robots.txt`. If TikTok needs evasion to load, the source gets dropped — that is the correct outcome, and a better interview answer than a bypass.
-- Second on the cut list. If the window is tight, ship API-only and say why.
+- **Pitfall density dropped with the cut.** 9 of 19 identified pitfalls landed here while TikTok was
+  in scope; the six that remain are all Sheets-side — PITFALLS.md §3 (unshared Sheet), §4
+  (cell-by-cell writes), §5 (RAW vs USER_ENTERED), §6 (full-tab rewrite clobbers Status), §13 (NULL
+  vs 0 in delta math), §18(d) (silently stale Sheet). Each is closed by a decision in 04-CONTEXT.md.
+- **No research phase needed.** `--research-phase 4` existed for TikTok's unknowable selectors. gspread
+  is fully covered by STACK.md §6 and PITFALLS.md §3–6 — plan directly.
+- Never `.clear()` the Dashboard tab. Write only the DB-owned range `A1:F{n+1}` so the human-edited
+  Status column in G survives. Status stays last, and 04-CONTEXT.md D-03 **freezes the column set for
+  v1** — this layout is a contract with Phase 5's `onEdit` and conditional formatting, and inserting
+  a column later shifts Status out from under both.
+- One write call per tab per run. Build the full 2D array in memory first. Cell-by-cell looks fine at
+  four rows and breaks in front of the interviewer.
+- Deltas computed in Python from the database, never as Sheet formulas. Strict day-over-day:
+  yesterday is `metric_date - 1 day` exactly, and a missing row reads `—`, never a number against an
+  assumed zero.
+- `value_input_option="USER_ENTERED"` so the delta and timestamp columns land as real numbers and a
+  real datetime — Phase 5's conditional formatting keys on numeric values, not strings. Verify by eye
+  once: the delta column must render right-aligned.
+- Dashboard rows come from the database, not from `creators.yaml` (04-CONTEXT.md D-01). One
+  consequence is live and deliberate: the orphan `mkbhd` row from the Phase 3 bogus-handle test
+  renders with a `—` delta, which is pointable proof of DATA-04.
+- Playwright stays in `pyproject.toml` and stays installed on the droplet. Removing it is a
+  gate-touching change with no benefit, and keeping it keeps the source's return cheap.
 - Manual gate: the author watches real data reach the real Sheet.
 
 ### Phase 5: Apps Script
@@ -301,23 +334,27 @@ Notes:
 
 ## Coverage
 
-All 45 v1 requirements are mapped to exactly one phase. No orphans, no duplicates.
+All 45 v1 requirements are accounted for: **43 mapped to exactly one phase, 2 cut**. No orphans, no
+duplicates.
 
 | Phase | Requirements | Count |
 |-------|--------------|-------|
 | 1. Skeleton | OPS-02, OPS-03, OPS-04 | 3 |
 | 2. VPS & systemd | RUN-03, RUN-04, OPS-01 | 3 |
 | 3. Collector Core & API Sources | CFG-01, CFG-02, CFG-03, SRC-01, SRC-02, SRC-04, SRC-05, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, RUN-01, RUN-02, RUN-05, OPS-05, OPS-06, OPS-07 | 18 |
-| 4. Playwright & Sheets | SRC-03, SHEET-01, SHEET-02, SHEET-03, SHEET-04, SHEET-05, SHEET-06, SHEET-07 | 8 |
+| 4. Playwright & Sheets | SHEET-01, SHEET-02, SHEET-03, SHEET-05, SHEET-06, SHEET-07 | 6 |
 | 5. Apps Script | SCRIPT-01, SCRIPT-02, SCRIPT-03, SCRIPT-04 | 4 |
 | 6. Discord Bot | BOT-01, BOT-02, BOT-03, BOT-04, BOT-05, BOT-06, BOT-07 | 7 |
 | 7. Reliability & Docs | OPS-08, OPS-09 | 2 |
+| **Mapped** | | **43** |
+| *Cut 2026-08-05* | *SRC-03 (cut-order item 2), SHEET-04 (cut-order item 3)* | *2* |
 | **Total** | | **45** |
 
-Notes on two assignment calls:
+Notes on three assignment calls:
 
 - **OPS-02/03/04 sit in Phase 1** because that is where the gate is built. They are re-enforced at every subsequent phase via the Definition of Green above, not re-owned.
-- **OPS-06 (normalisation tests, "for each source") sits in Phase 3** with the two API sources. The TikTok fixture test is added in Phase 4 as part of SRC-03's own work rather than reopening OPS-06.
+- **OPS-06 (normalisation tests, "for each source") sits in Phase 3** with the two API sources. It was to be joined by a TikTok fixture test in Phase 4 as part of SRC-03's own work; **with SRC-03 cut, that addition is void and OPS-06 stands closed on the two API sources it already covers.** OPS-06 is not reopened.
+- **SRC-03 and SHEET-04 are cut, not deferred within this milestone.** No remaining phase could take them before the interview, so both moved to v2 in REQUIREMENTS.md rather than being re-parented. A verifier must not open gaps against them.
 
 ## Notes on Structure
 
@@ -346,3 +383,4 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 
 ---
 *Roadmap created: 2026-07-29*
+*Amended 2026-08-05 — cut-order items 2 (SRC-03, TikTok/Playwright) and 3 (SHEET-04, History tab) exercised during Phase 4 discussion. Phase 4 scope 8 requirements → 6, criteria 5 → 4. Phase name kept to preserve the `04-playwright-sheets/` directory. Both requirements moved to v2 in REQUIREMENTS.md.*
