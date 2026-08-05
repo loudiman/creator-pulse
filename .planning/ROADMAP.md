@@ -49,7 +49,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Skeleton** - Repo layout, toolchain, and the green gate that every later phase must pass (completed 2026-07-30)
 - [x] **Phase 2: VPS & systemd** - Provisioned box, timer, journal, and secrets that never touch the repo (completed 2026-08-04)
-- [ ] **Phase 3: Collector Core & API Sources** - Normalized records land idempotently in SQLite from YouTube and Twitch
+- [x] **Phase 3: Collector Core & API Sources** - Normalized records land idempotently in SQLite from YouTube *(Twitch deferred — SRC-02 blocked on account 2FA)* (completed 2026-08-05)
 - [ ] **Phase 4: Playwright & Sheets** - TikTok scraped, and the Sheet becomes a readable view of the database
 - [ ] **Phase 5: Apps Script** - The Sheet gains a menu, formatting, and a two-way trip back to Discord
 - [ ] **Phase 6: Discord Bot** - Daily digest, failure alerts, and on-demand answers from the database
@@ -338,7 +338,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 |-------|----------------|--------|-----------|
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
-| 3. Collector Core & API Sources | 5/6 | Awaiting UAT | code complete 2026-08-05 |
+| 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
 | 4. Playwright & Sheets | 0/TBD | Not started | - |
 | 5. Apps Script | 0/TBD | Not started | - |
 | 6. Discord Bot | 0/TBD | Not started | - |
