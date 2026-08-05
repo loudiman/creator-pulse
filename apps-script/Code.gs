@@ -13,8 +13,15 @@ const SOURCE_COLUMN = 2; // column B — the other name D-14's message uses
 const FIRST_DATA_ROW = 2; // row 1 is the header; an edit to row 1 of G is not a Status edit
 const WEBHOOK_PROPERTY = 'DISCORD_WEBHOOK_URL'; // D-13 — read at call time, never hardcoded
 
-// 05-02 appends STALE_THRESHOLD_HOURS, WATCHDOG_HOUR, SCRIPT_TIMEZONE, DELTA_RANGE,
-// POSITIVE_BACKGROUND, NEGATIVE_BACKGROUND beside these. Leave room; do not pre-declare them.
+const LAST_UPDATED_COLUMN = 6; // column F, "Last updated (UTC)"
+// D-06: the collector runs 08:00 Manila = 00:00 UTC (Phase 2 D-09), so 09:00 is one hour
+// after the run should have finished, and 26 hours alerts on a genuinely missed run while
+// tolerating one that was merely slow, retried, or a little late.
+const STALE_THRESHOLD_HOURS = 26;
+const WATCHDOG_HOUR = 9;
+const SCRIPT_TIMEZONE = 'Asia/Manila';
+
+// 05-02 appends DELTA_RANGE, POSITIVE_BACKGROUND, NEGATIVE_BACKGROUND beside these.
 
 /**
  * Simple trigger — builds the menu. Needs no authorization, so it runs for anyone who opens
@@ -24,9 +31,10 @@ const WEBHOOK_PROPERTY = 'DISCORD_WEBHOOK_URL'; // D-13 — read at call time, n
 function onOpen(e) {
   SpreadsheetApp.getUi()
     .createMenu('CreatorPulse')
+    .addItem('Check freshness now', 'checkFreshness')
     .addItem('Install triggers', 'installTriggers')
     .addToUi();
-  // 05-02 inserts two more addItem calls ahead of this one, in D-09's stated order.
+  // Task 2 inserts 'Re-apply formatting' between the two items above, in D-09's stated order.
 }
 
 /**
@@ -45,7 +53,17 @@ function installTriggers() {
   });
 
   ScriptApp.newTrigger('onStatusEdit').forSpreadsheet(ss).onEdit().create();
-  const createdCount = 1; // 05-02 adds the time-driven trigger beside this one
+
+  // The watchdog's daily fire (D-05, D-06). .inTimezone() is not redundant with the
+  // manifest's timeZone even though both say Asia/Manila — this call is what actually pins
+  // atHour() to Manila local time; the manifest is only the fallback when this is omitted.
+  ScriptApp.newTrigger('checkFreshness')
+    .timeBased()
+    .atHour(WATCHDOG_HOUR)
+    .everyDays(1)
+    .inTimezone(SCRIPT_TIMEZONE)
+    .create();
+  const createdCount = 2;
 
   ss.toast(
     'Removed ' + removedCount + ' trigger(s), created ' + createdCount + '.',
@@ -137,6 +155,86 @@ function postToDiscord(message) {
     // times a day, not a batch job.
     console.error('Discord webhook returned ' + code + ': ' + response.getContentText());
   }
+}
+
+/**
+ * The stale-data watchdog (D-05, D-06, D-07, SCRIPT-02). Called by the daily time-driven
+ * trigger and by the "Check freshness now" menu item — same function, no duplicated logic.
+ *
+ * Exactly three outcomes:
+ *   1. Cannot determine — missing tab, header-only tab, or nothing in column F parses. Posts
+ *      a DISTINCT alert. D-07 makes silence mean exactly one thing ("the data is fresh"), so
+ *      a parse failure must never be reported as staleness and must never stay silent — a
+ *      silent return here would reproduce PITFALLS.md §18(d) inside the thing built to answer
+ *      it, and would look identical to a healthy day.
+ *   2. Stale — newest parseable timestamp is more than STALE_THRESHOLD_HOURS old. Posts an
+ *      alert naming that timestamp and the age.
+ *   3. Fresh — returns, posting nothing.
+ */
+function checkFreshness() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(DASHBOARD_TAB);
+  if (!sheet) {
+    postToDiscord('Watchdog: could not determine freshness — the "' + DASHBOARD_TAB + '" tab is missing.');
+    return;
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < FIRST_DATA_ROW) {
+    postToDiscord('Watchdog: could not determine freshness — the "' + DASHBOARD_TAB + '" tab has no data rows.');
+    return;
+  }
+
+  // One batched range read, not a per-row getValue() — same batching judgment SHEET-05
+  // applies on the Python side.
+  const values = sheet
+    .getRange(FIRST_DATA_ROW, LAST_UPDATED_COLUMN, lastRow - FIRST_DATA_ROW + 1, 1)
+    .getValues();
+
+  let newestMs = null;
+  values.forEach(function (row) {
+    const raw = row[0];
+    if (raw === '' || raw === null || raw === undefined) {
+      return; // an empty column F cell is an absent row, not a parse failure
+    }
+    // Wave 0 answer (05-01): column F lands as a string under USER_ENTERED, not a Date.
+    // Keep both branches anyway — a future value_input_option change cannot silently break
+    // this — and discard a NaN candidate at parse time, before it can win the comparison.
+    // An unguarded NaN would make the staleness comparison below false forever: the watchdog
+    // would stay permanently and silently quiet, which is the failure direction that looks
+    // exactly like health.
+    const asDate = raw instanceof Date ? raw : new Date(raw);
+    const ms = asDate.getTime();
+    if (isNaN(ms)) {
+      return;
+    }
+    if (newestMs === null || ms > newestMs) {
+      newestMs = ms;
+    }
+  });
+
+  if (newestMs === null) {
+    postToDiscord(
+      'Watchdog: could not determine freshness — no cell in column F of "' +
+        DASHBOARD_TAB +
+        '" parsed to a real date.'
+    );
+    return;
+  }
+
+  // Epoch milliseconds on both sides — a duration, no timezone conversion belongs here.
+  const ageHours = (Date.now() - newestMs) / 3600000;
+  // Strict '>': an age of exactly 26.0 hours stays silent. That is the tolerant direction,
+  // right for a threshold chosen to absorb a slow run rather than to catch one.
+  if (ageHours > STALE_THRESHOLD_HOURS) {
+    postToDiscord(
+      'Watchdog: the collector has not run since ' +
+        new Date(newestMs).toISOString() +
+        ' (' +
+        Math.round(ageHours) +
+        'h ago).'
+    );
+  }
+  // Fresh: return without posting anything. Silence means fresh and nothing else.
 }
 
 /**
