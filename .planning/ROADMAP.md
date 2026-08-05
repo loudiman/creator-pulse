@@ -210,7 +210,7 @@ Notes:
   3. The author types into the Status column, re-runs the collector, and the typed value is still there afterwards
   4. A Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -220,7 +220,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 04-02-PLAN.md — Delta and NULL semantics, fixture-tested: strict `metric_date - 1 day` baseline, `—` unless both rows and both `views` are non-NULL, no `COALESCE` anywhere
-- [ ] 04-04-PLAN.md — Phase artifacts: `COVERAGE.md` for the Sheets API v4 surface, and the `04-UAT.md` scaffold. Documents only, no source files, which is why it runs parallel to 04-02
+- [x] 04-04-PLAN.md — Phase artifacts: `COVERAGE.md` for the Sheets API v4 surface, and the `04-UAT.md` scaffold. Documents only, no source files, which is why it runs parallel to 04-02
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -404,7 +404,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
-| 4. Playwright & Sheets | 2/4 | In Progress|  |
+| 4. Playwright & Sheets | 3/4 | In Progress|  |
 | 5. Apps Script | 0/TBD | Not started | - |
 | 6. Discord Bot | 0/TBD | Not started | - |
 | 7. Reliability & Docs | 0/TBD | Not started | - |

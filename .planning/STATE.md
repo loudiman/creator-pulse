@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Playwright & Sheets
 status: executing
-stopped_at: Completed 04-02-PLAN.md (day-over-day delta on views)
-last_updated: "2026-08-05T17:33:57.934Z"
+stopped_at: Completed 04-04-PLAN.md (COVERAGE.md + 04-UAT.md)
+last_updated: "2026-08-05T17:40:41.979Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 16
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 4 (Playwright & Sheets) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 4 execution started
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [████████░░] 81%
 | Phase 03 P05 | 30min | 3 tasks | 5 files |
 | Phase 04 P01 | 45min | 2 tasks | 5 files |
 | Phase 04 P02 | 35min | 2 tasks | 2 files |
+| Phase 04 P04 | 20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 04-02: LATEST_ROWS_SQL left-joins metrics AS prev on date(metric_date, '-1 day'), keyed on idx_metrics_creator_date -- pair with no baseline still reaches Dashboard
 - [Phase ?]: 04-02: build_dashboard_rows column E is DELTA_PLACEHOLDER if views is None or prev_views is None else views - prev_views -- one conditional expression, is-None guard on both sides, zero renders 0, negative unclamped
 - [Phase ?]: 04-02: no 04-01 assertion pinned column E to DELTA_PLACEHOLDER (verified via grep), so the plan's anticipated one-line amendment did not apply -- zero lines amended/deleted
+- [Phase ?]: 04-04: COVERAGE.md gate-verified 7 INTEGRATE/27 OPT-OUT, every opt-out cites a written decision
+- [Phase ?]: 04-04: 04-UAT.md ships all 4 entries pending (one shared blocker) per plan instruction, even though prior-session groundwork (SA/Sheet) is recorded in STATE.md
 
 ### Pending Todos
 
@@ -138,6 +141,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T17:33:57.898Z
-Stopped at: Completed 04-02-PLAN.md (day-over-day delta on views)
+Last session: 2026-08-05T17:40:41.939Z
+Stopped at: Completed 04-04-PLAN.md (COVERAGE.md + 04-UAT.md)
 Resume file: None
