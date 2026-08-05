@@ -24,6 +24,7 @@ class SheetsKeyfileUnusable(Exception):
     """Raised when CREATORPULSE_SHEETS_KEYFILE is missing, unreadable, or not valid JSON —
     checked before any network call (D-08, SHEET-07)."""
 
+
 # Exactly six entries, columns A..F. Length is what keeps the write range from reaching G —
 # the range is built from len(values) and the literal letter F, so a header edit here cannot
 # silently push a value into the human-owned Status column. SHEET-02's "labelled coarse"
