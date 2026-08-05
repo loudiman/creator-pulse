@@ -296,12 +296,12 @@ Notes:
   4. A time-driven trigger fires on schedule and its execution is visible in the Apps Script execution log
   5. The author can walk someone through the `onEdit` trigger's event object and the webhook call from memory
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Tracer: a real Status edit to a real Discord message. The manifest, the `onOpen` menu, the delete-then-recreate trigger installer, the **installable** `onEdit` handler, the Script-Properties webhook reader, and the column F timestamp probe. **Carries a blocking human checkpoint (webhook creation, paste, authorize, install), so it is not autonomous.**
+- [x] 05-01-PLAN.md — Tracer: a real Status edit to a real Discord message. The manifest, the `onOpen` menu, the delete-then-recreate trigger installer, the **installable** `onEdit` handler, the Script-Properties webhook reader, and the column F timestamp probe. **Carries a blocking human checkpoint (webhook creation, paste, authorize, install), so it is not autonomous.**
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -419,7 +419,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
 | 4. Playwright & Sheets | 4/4 | Complete    | 2026-08-06 |
-| 5. Apps Script | 0/3 | Not started | - |
+| 5. Apps Script | 1/3 | In Progress|  |
 | 6. Discord Bot | 0/TBD | Not started | - |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
 

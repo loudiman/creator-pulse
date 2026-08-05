@@ -86,9 +86,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 *(~~entire category human-built — the agent does not generate these~~ — **AMENDED 2026-08-06: Phase 5 is now `mixed`.** The agent writes `apps-script/Code.gs`; the author reads, is walked through it, pastes it, and must be able to explain it cold. Reason: the interview clock. See ROADMAP.md §"Phase 5" Notes and `.planning/phases/05-apps-script/05-CONTEXT.md` D-01/D-02.)*
 
-- [ ] **SCRIPT-01**: Sheet has an `onOpen` custom menu
+- [x] **SCRIPT-01**: Sheet has an `onOpen` custom menu
 - [ ] **SCRIPT-02**: A time-driven trigger runs on schedule
-- [ ] **SCRIPT-03**: Editing a Status cell posts to a Discord webhook via `onEdit`
+- [x] **SCRIPT-03**: Editing a Status cell posts to a Discord webhook via `onEdit`
 - [ ] **SCRIPT-04**: Conditional formatting highlights day-over-day movement on the Dashboard
 
 ### Discord
@@ -193,9 +193,9 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SHEET-05 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-06 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-07 | Phase 4: Playwright & Sheets | In progress (04-03 pending) |
-| SCRIPT-01 | Phase 5: Apps Script | Pending |
+| SCRIPT-01 | Phase 5: Apps Script | Complete |
 | SCRIPT-02 | Phase 5: Apps Script | Pending |
-| SCRIPT-03 | Phase 5: Apps Script | Pending |
+| SCRIPT-03 | Phase 5: Apps Script | Complete |
 | SCRIPT-04 | Phase 5: Apps Script | Pending |
 | BOT-01 | Phase 6: Discord Bot | Pending |
 | BOT-02 | Phase 6: Discord Bot | Pending |

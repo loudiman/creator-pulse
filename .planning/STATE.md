@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 5
-current_phase_name: Apps Script
+current_phase: 05
+current_phase_name: apps-script
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-08-05T20:17:58.190Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-08-05T21:29:50.670Z"
 last_activity: 2026-08-06
-last_activity_desc: Phase 4 complete, transitioned to Phase 5
+last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** The unattended daily run — a timer fires, real numbers land in the database, the Sheet reflects them, and Discord says so, with no human in the loop.
-**Current focus:** Phase 4 — Playwright & Sheets
+**Current focus:** Phase 05 — apps-script
 
 ## Current Position
 
-Phase: 5 — Apps Script
-Plan: Not started
+Phase: 05 (apps-script) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-08-06 — Phase 4 complete, transitioned to Phase 5
+Last activity: 2026-08-06 — Phase 05 execution started
 
-Progress: [█████████░] 94%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [█████████░] 94%
 | Phase 04 P02 | 35min | 2 tasks | 2 files |
 | Phase 04 P04 | 20min | 2 tasks | 2 files |
 | Phase 04 P03 | 50min | 3 tasks | 5 files |
+| Phase 05 P01 | 40min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 04-04: 04-UAT.md ships all 4 entries pending (one shared blocker) per plan instruction, even though prior-session groundwork (SA/Sheet) is recorded in STATE.md
 - [Phase ?]: run_collect() treats missing Sheets config as a sync failure (raises + logs), never a silent skip -- consistent with D-07/PITFALLS.md §18(d)
 - [Phase ?]: 3 pre-existing run_collect() callers (test_config.py, test_paths.py) updated with Sheets env vars + stubbed sync -- new mandatory dependency, no assertion weakened
+- [Phase ?]: 05-01: column F is a string under USER_ENTERED, not a Date; new Date(raw) parses clean (Wave 0 answer for 05-02's staleness math)
+- [Phase ?]: 05-01: installTriggers() delete-then-recreate guard confirmed live — second click reports removed 1/created 1, exactly one onStatusEdit trigger persists
 
 ### Pending Todos
 
@@ -145,6 +148,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T19:35:38.611Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-apps-script/05-CONTEXT.md
+Last session: 2026-08-05T21:29:50.618Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
