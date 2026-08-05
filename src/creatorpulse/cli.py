@@ -24,8 +24,21 @@ def configure_logging() -> None:
 def run_collect(config_path: Path, db_path: Path) -> int:
     """Run one collection.
 
-    Exit codes: 0 clean run; 1 config file not found, or the run completed with failures;
-    2 creators.yaml failed validation — nothing was opened, nothing was fetched (CFG-03, D-11).
+    Exit codes say whether the run COMPLETED, not whether every source succeeded:
+      0  the run completed — including runs where some (creator, source) pairs failed.
+         Per-pair failures are reported in the `runs` row's failure_count and in the log,
+         which is the channel Phase 6's /status and BOT-03 read. RUN-01 requires one
+         failing source not to abort the run; reporting that run as a process failure
+         would contradict it.
+      1  config file not found — the run could not start.
+      2  creators.yaml failed validation — nothing opened, nothing fetched (CFG-03, D-11).
+      *  a run that DIES part way re-raises after its `runs` row is written (D-16), so the
+         interpreter exits non-zero on its own. That is the case a non-zero code means.
+
+    Why this matters operationally: systemd marks a unit `failed` on any non-zero exit.
+    Returning 1 for a run that wrote most of its rows would leave `systemctl --failed`
+    permanently red once a single creator hiccups, and a smoke alarm that is always on is
+    one nobody looks at. Phase 7's narrated cold-start demo would show red while working.
     """
     start = time.monotonic()
     logger.info("Starting collect run using config %s, database %s", config_path, db_path)
@@ -49,7 +62,7 @@ def run_collect(config_path: Path, db_path: Path) -> int:
     logger.info("Run wrote %d rows with %d failures", result.rows_written, result.failure_count)
     elapsed = time.monotonic() - start
     logger.info("Run complete in %.2f seconds", elapsed)
-    return 0 if result.failure_count == 0 else 1
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

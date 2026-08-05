@@ -263,3 +263,37 @@ def test_run_collect_fourth_creator_needs_no_code_change(
     ).fetchone()[0]
     conn.close()
     assert count == 1
+
+
+def test_run_collect_returns_zero_when_a_source_failed_but_the_run_completed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A completed run exits 0 even with per-pair failures; the runs row carries the count.
+
+    RUN-01 requires one failing source not to abort the run. Reporting such a run as a
+    process failure would contradict that, and would leave the systemd unit permanently
+    `failed` once any single creator hiccups. Non-zero is reserved for a run that did not
+    complete: config missing (1), validation failed (2), or a crash that re-raises (D-16).
+    """
+    monkeypatch.setenv("YOUTUBE_API_KEY", "fake-key-for-test")
+
+    def _boom(*_args: Any, **_kwargs: Any) -> Any:
+        raise RuntimeError("simulated transport failure")
+
+    monkeypatch.setattr("creatorpulse.sources.youtube.requests.get", _boom)
+
+    config_path = tmp_path / "creators.yaml"
+    config_path.write_text(CREATORS_YAML.read_text(encoding="utf-8"), encoding="utf-8")
+    db_path = tmp_path / "creatorpulse.db"
+
+    exit_code = run_collect(config_path, db_path)
+
+    assert exit_code == 0, "a completed run must not report itself as a process failure"
+
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT rows_written, failure_count FROM runs").fetchone()
+    conn.close()
+
+    assert row["failure_count"] > 0, "the failure must still be counted in the runs row"
+    assert row["rows_written"] == 0, "every fetch failed, so no metric row was written"
