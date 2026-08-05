@@ -296,7 +296,7 @@ Notes:
   4. A time-driven trigger fires on schedule and its execution is visible in the Apps Script execution log
   5. The author can walk someone through the `onEdit` trigger's event object and the webhook call from memory
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -305,7 +305,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 05-02-PLAN.md — Expansion: the stale-data watchdog with three outcomes and its 09:00 Manila trigger, the two sign-keyed conditional-format rules on `E2:E1000`, and the two remaining menu items. Blocked on 05-01's empirical timestamp answer.
+- [x] 05-02-PLAN.md — Expansion: the stale-data watchdog with three outcomes and its 09:00 Manila trigger, the two sign-keyed conditional-format rules on `E2:E1000`, and the two remaining menu items. Blocked on 05-01's empirical timestamp answer.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -419,7 +419,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
 | 4. Playwright & Sheets | 4/4 | Complete    | 2026-08-06 |
-| 5. Apps Script | 1/3 | In Progress|  |
+| 5. Apps Script | 2/3 | In Progress|  |
 | 6. Discord Bot | 0/TBD | Not started | - |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
 

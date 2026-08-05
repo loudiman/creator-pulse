@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: apps-script
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-08-05T21:29:50.670Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-08-05T22:07:21.675Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 05 (apps-script) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 05 execution started
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [████████░░] 84%
 | Phase 04 P04 | 20min | 2 tasks | 2 files |
 | Phase 04 P03 | 50min | 3 tasks | 5 files |
 | Phase 05 P01 | 40min | 2 tasks | 5 files |
+| Phase 05 P02 | 55min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -124,6 +125,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 3 pre-existing run_collect() callers (test_config.py, test_paths.py) updated with Sheets env vars + stubbed sync -- new mandatory dependency, no assertion weakened
 - [Phase ?]: 05-01: column F is a string under USER_ENTERED, not a Date; new Date(raw) parses clean (Wave 0 answer for 05-02's staleness math)
 - [Phase ?]: 05-01: installTriggers() delete-then-recreate guard confirmed live — second click reports removed 1/created 1, exactly one onStatusEdit trigger persists
+- [Phase ?]: 05-02: checkFreshness discards NaN at parse time (before comparison) so a single unparseable column-F cell cannot make the watchdog permanently silent
+- [Phase ?]: 05-02: applyFormatting toast() bug (Sheet has no toast method, only Spreadsheet does) found in orchestrator review before live paste; fixed by hoisting ss=SpreadsheetApp.getActive(), confirmed live via the fixed toast
+- [Phase ?]: 05-02: watchdog's three outcomes (stale, cannot-determine, silence) proven independently live; silence backed by a Completed Executions run closes D-07 as verified, not assumed
 
 ### Pending Todos
 
@@ -148,6 +152,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T21:29:50.618Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-08-05T22:07:21.620Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
