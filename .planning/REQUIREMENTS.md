@@ -80,7 +80,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SHEET-05**: Sheet writes are batched — at most one write call per tab per run, never cell-by-cell
 - [x] **SHEET-06**: The human-edited Status column survives a Dashboard refresh untouched
-- [ ] **SHEET-07**: A Sheet not shared with the service account fails with an explicit instruction naming the `client_email` to share it with, not a raw 403 *(corrected 2026-08-06 — 04-04 marked this complete prematurely; the `SheetNotShared` exception is implemented in 04-03, not yet executed)*
+- [x] **SHEET-07**: A Sheet not shared with the service account fails with an explicit instruction naming the `client_email` to share it with, not a raw 403 *(corrected 2026-08-06 — 04-04 marked this complete prematurely; the `SheetNotShared` exception is implemented in 04-03, not yet executed)*
 
 ### Apps Script
 

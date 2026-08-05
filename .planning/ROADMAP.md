@@ -210,7 +210,7 @@ Notes:
   3. The author types into the Status column, re-runs the collector, and the typed value is still there afterwards
   4. A Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -224,7 +224,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 04-03-PLAN.md — Failure paths and the second entry point: `SheetNotShared` / `SheetsKeyfileUnusable`, the D-07 log-then-re-raise policy, and the sync call attached to `run_collect()`
+- [x] 04-03-PLAN.md — Failure paths and the second entry point: `SheetNotShared` / `SheetsKeyfileUnusable`, the D-07 log-then-re-raise policy, and the sync call attached to `run_collect()`
 
 Cross-cutting constraints:
 
@@ -404,7 +404,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
-| 4. Playwright & Sheets | 3/4 | In Progress|  |
+| 4. Playwright & Sheets | 4/4 | In Progress|  |
 | 5. Apps Script | 0/TBD | Not started | - |
 | 6. Discord Bot | 0/TBD | Not started | - |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
