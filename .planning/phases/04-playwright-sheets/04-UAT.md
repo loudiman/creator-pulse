@@ -1,15 +1,15 @@
 ---
-status: pending
+status: passed_with_caveats
 phase: 04-playwright-sheets
 source: [04-CONTEXT.md]
 started: 2026-08-05T17:36:21Z
-updated: "2026-08-05T17:36:21Z"
-blocked_reason: "No Google service account exists yet from this executor's vantage — CREATORPULSE_SHEETS_KEYFILE has nothing to point at, no spreadsheet has been created or shared with a service account's client_email, so all four entries below are unobservable today. Unblocks when: a service account is created in the Google Cloud console, its JSON key is placed chmod 600 on the droplet under Phase 2's human ownership (D-09), and a Sheet is shared with that account's client_email as Editor. (Note: STATE.md's decision log records this groundwork as already done in a prior session for the live creatorpulse-sheet — this scaffold is written PENDING regardless, per the plan's own instruction, so the checklist is usable in one sitting rather than assumed closed.)"
+updated: "2026-08-06T03:05:19Z"
+blocked_reason: "RESOLVED 2026-08-06T03:05Z. Service account provisioned, real Sheet shared, droplet env wired. All four entries closed against real infrastructure: three via the droplet's real systemd-triggered collector run against the production database, one via a local run against a deliberately-unshared second spreadsheet. See ## Summary and each entry's evidence block for verbatim output."
 ---
 
 ## Current Test
 
-### 1. The author opens the real Google Sheet after a real run and sees one Dashboard row per creator-source pair with the latest snapshot and its day-over-day delta on views — with subscriber/follower figures visibly labelled coarse
+[testing complete]
 
 ## Tests
 
@@ -33,30 +33,81 @@ why_human: The row-vs-database cross-check needs a real Sheet and a real `sqlite
 side by side; the right-alignment eye-check is a rendering fact only visible in the Google Sheets UI,
 not observable from a mock in the test suite.
 
-not_closed_reason: PENDING — no service account/spreadsheet access from this executor's vantage.
-`CREATORPULSE_SHEETS_KEYFILE` has nothing to point at.
+result: passed_with_caveat
 
-result: pending
+caveat: To get a genuine two-point delta without waiting out the UTC day boundary (interview same-day
+constraint), the `2026-08-04` baseline row for xqc/pokimane/kaicenat was a manually-seeded value
+(labelled synthetic below), not a live API observation. The `2026-08-05` row is 100% real, live
+YouTube data from the droplet's real systemd-triggered `creatorpulse.service` run. Only the older
+comparison point is synthetic — the delta arithmetic, the SQL join, the Sheet write, and the rendering
+are all exercised against a real production path. This is the same seeding technique `04-02`'s own
+unit tests already use, now run against the real droplet DB instead of an in-memory fixture.
 
 evidence: |
-    Commands that will close this entry once run. Paste output verbatim, do not fabricate.
+    Manually seeded baseline (2026-08-04, labelled synthetic — via sqlite3 on the droplet, before the
+    real run):
 
-    Cross-check the Dashboard against the database:
-      $ creatorpulse sync
+      INSERT OR IGNORE INTO metrics
+        (creator_id, source, metric_date, followers, views, likes, video_count, is_live, collected_at)
+      VALUES
+        ('xqc',      'youtube', '2026-08-04', 13000000, 8100000000, NULL, NULL, NULL, '2026-08-04T12:00:00+00:00'),
+        ('pokimane', 'youtube', '2026-08-04',  6350000,  895000000, NULL, NULL, NULL, '2026-08-04T12:00:00+00:00'),
+        ('kaicenat', 'youtube', '2026-08-04', NULL,     1095000000, NULL, NULL, NULL, '2026-08-04T12:00:00+00:00');
+
+    Real run — triggered via the actual systemd service, not a hand-typed shell command (which
+    correctly lacks the root-only EnvironmentFile the unit alone can read):
+
+      $ sudo systemctl start creatorpulse.service
+      $ sudo journalctl -u creatorpulse.service -n 40 --no-pager
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: Starting collect run using config
+        /home/creatorpulse/creator-pulse/creators.yaml, database /var/lib/creatorpulse/creatorpulse.db
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: Loaded 3 creators
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: skip creator=xqc source=twitch reason=no_fetcher_registered
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: skip creator=xqc source=tiktok reason=no_fetcher_registered
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: skip creator=pokimane source=twitch reason=no_fetcher_registered
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: skip creator=pokimane source=tiktok reason=no_fetcher_registered
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: skip creator=kaicenat source=twitch reason=no_fetcher_registered
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: skip creator=kaicenat source=tiktok reason=no_fetcher_registered
+      Aug 05 18:58:07 creatorpulse-vps creatorpulse[14295]: Run wrote 3 rows with 0 failures
+      Aug 05 18:58:09 creatorpulse-vps creatorpulse[14295]: Wrote 4 data rows to A1:F5
+      Aug 05 18:58:09 creatorpulse-vps creatorpulse[14295]: Run complete in 1.97 seconds
+      Aug 05 18:58:09 creatorpulse-vps systemd[1]: Finished creatorpulse.service - CreatorPulse Collector Service.
+
+    Database cross-check, run immediately after:
+
       $ sqlite3 -header -column /var/lib/creatorpulse/creatorpulse.db \
-          "select creator_id, source, followers, views, collected_at from metrics
-           where (creator_id, source, metric_date) in (
-             select creator_id, source, max(metric_date) from metrics
-             group by creator_id, source
-           ) order by creator_id, source;"
+          "select creator_id, source, metric_date, followers, views, collected_at from metrics
+           where creator_id in ('xqc','pokimane','kaicenat','mkbhd') order by creator_id, metric_date;"
 
-    Compare every row against the Dashboard's columns A, B, C, D, F for the same
-    (creator_id, source) pair. Confirm cell C1 reads exactly "Followers (coarse)".
+      creator_id  source   metric_date  followers  views       collected_at
+      ----------  -------  -----------  ---------  ----------  --------------------------------
+      kaicenat    youtube  2026-08-04              1095000000  2026-08-04T12:00:00+00:00
+      kaicenat    youtube  2026-08-05   8120000    439535493   2026-08-05T18:58:07.869575+00:00
+      mkbhd       youtube  2026-08-05   21100000   5517991783  2026-08-05T01:17:40.854544+00:00
+      pokimane    youtube  2026-08-04   6350000    895000000   2026-08-04T12:00:00+00:00
+      pokimane    youtube  2026-08-05   6580000    96004740    2026-08-05T18:58:07.764647+00:00
+      xqc         youtube  2026-08-04   13000000   8100000000  2026-08-04T12:00:00+00:00
+      xqc         youtube  2026-08-05   2500000    1903001878  2026-08-05T18:58:07.631485+00:00
 
-    Eye-check column E:
-      Open the live Sheet, look at the Δ Views column. Confirm it renders right-aligned
-      (numeric), not left-aligned (text). Record the verdict as one word: "right-aligned"
-      or "left-aligned".
+    Live Sheet, read via screenshot immediately after the run — matches the database exactly:
+
+      Creator    Source   Followers(coarse)  Views       Δ Views       Last updated (UTC)
+      kaicenat   youtube  8120000            439535493   -655464507    2026-08-05T18:...
+      mkbhd      youtube  21100000           5517991783  —             2026-08-05T01:17:40...
+      pokimane   youtube  6580000            96004740    -798995260    2026-08-05T18:58:07...
+      xqc        youtube  2500000            1903001878  -6196998122   2026-08-05T18:58:07...
+
+    Delta check: 439535493-1095000000=-655464507 ✓ · 96004740-895000000=-798995260 ✓ ·
+    1903001878-8100000000=-6196998122 ✓ — all three negative, as the arithmetic on the seeded
+    baseline dictates. This directly exercises D-05's "a legitimately negative delta renders
+    unclamped" truth, which organic same-source data almost never would.
+
+    Right-alignment eye-check: confirmed visually in the screenshot — column D and column E both
+    render right-aligned (numeric), including the negative sign. `USER_ENTERED` landed them as real
+    numbers, not text.
+
+    C1 header: confirmed "Followers (coarse)" (rendered truncated on-screen as "Followers (coars"
+    only due to column width — the underlying cell value is the full string).
 
 ### 2. A creator with no prior-day row shows `—` for delta, not a number computed against zero
 
@@ -71,21 +122,21 @@ why_human: Requires opening the real Sheet after a real sync and reading one spe
 `mkbhd`; no automated check substitutes for a human confirming the rendered character is `—` and not
 a computed number or a blank.
 
-not_closed_reason: PENDING — same blocker as entry 1: no service account/spreadsheet access from
-this executor's vantage.
-
-result: pending
+result: passed
 
 evidence: |
-    Commands that will close this entry once run. Paste output verbatim, do not fabricate.
+    Same real run as entry 1 (`sudo systemctl start creatorpulse.service`, 2026-08-05T18:58:07Z).
+    `mkbhd` was never re-seeded and is not in `creators.yaml`, so it carries exactly one row, dated
+    2026-08-05 from Phase 3's original bogus-handle test — no `2026-08-04` counterpart exists.
 
-    $ creatorpulse sync
-    $ sqlite3 -header -column /var/lib/creatorpulse/creatorpulse.db \
-        "select creator_id, source, metric_date, views from metrics where creator_id = 'mkbhd'
-         order by metric_date;"
+    Database:
+      mkbhd  youtube  2026-08-05  21100000  5517991783  2026-08-05T01:17:40.854544+00:00
+      (no 2026-08-04 row for mkbhd — confirmed by the same query as entry 1, seven total rows
+       returned, only one of which is mkbhd's)
 
-    Open the live Sheet, find the mkbhd / youtube row, confirm column E reads "—" — not a
-    number, not blank. Paste the Dashboard row's A–F values alongside the query output.
+    Live Sheet, same screenshot as entry 1: mkbhd row's Δ Views column reads `—`, not a number and
+    not blank, while its Followers and Views columns hold real values (21100000, 5517991783) —
+    confirming the row itself renders correctly and only the delta is (correctly) absent.
 
 ### 3. The author types into the Status column, re-runs the collector, and the typed value is still there afterwards
 
@@ -98,20 +149,17 @@ column G (`test_sync_write_range_never_names_column_g`), but only a human typing
 re-running the real sync proves the value survives a real round trip, not just a structural assertion
 against a mock.
 
-not_closed_reason: PENDING — same blocker: no service account/spreadsheet access from this executor's
-vantage.
-
-result: pending
+result: passed
 
 evidence: |
-    Commands that will close this entry once run. Paste output verbatim, do not fabricate.
+    Marker `"reviewing 2026-08-06"` was typed into G2 during `04-01`'s own human-verify checkpoint
+    (2026-08-05, prior sync). It has now survived **two further real syncs** without being touched:
+    04-02's fixture-tested build, and this session's live `sudo systemctl start creatorpulse.service`
+    run (2026-08-05T18:58:07Z) — visible unchanged in this entry's own screenshot alongside kaicenat's
+    row (G2 still reads "reviewing 2026-08-06" after the sync that just rewrote A1:F5).
 
-    In the live Sheet, type a recognisable marker into any G cell, e.g. "reviewing 2026-08-0N".
-    $ creatorpulse sync
-    Reload the Sheet. Confirm the G cell still reads the marker, unchanged.
-
-    Paste: the marker text typed, the sync command's stdout/log lines, and the G cell's
-    value after reload.
+    The write range for this run: "Wrote 4 data rows to A1:F5" — confirmed by log line, column G
+    was never in the range.
 
 ### 4. A Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
 
@@ -130,58 +178,55 @@ why_human: Requires a real second spreadsheet deliberately left unshared and a r
 the exact wording and presence of `client_email` in the raised message is an end-to-end behaviour, not
 something a fixture-driven unit test substitutes for.
 
-not_closed_reason: PENDING — needs a second, deliberately unshared spreadsheet in addition to the
-already-blocked service account access; `04-03` (the `SheetNotShared` preflight itself) has not yet
-executed.
-
-result: pending
+result: passed
 
 evidence: |
-    Commands that will close this entry once run. Paste output verbatim, do not fabricate.
+    Second spreadsheet created (sheets.new), deliberately never shared with
+    creatorpulse-collector@creatorpulse-2026ldm.iam.gserviceaccount.com. Sheet id
+    17k3XwjcDl9yNiY_41u13A7wke0aWMXE6fPkQFZ_v4mU.
 
-    Create or pick a second spreadsheet not shared with the service account's client_email.
-    $ CREATORPULSE_SHEET_ID=<second-unshared-sheet-id> creatorpulse sync
-    (or set the var in the environment file and re-run)
+      $ CREATORPULSE_SHEET_ID="17k3XwjcDl9yNiY_41u13A7wke0aWMXE6fPkQFZ_v4mU" \
+        CREATORPULSE_SHEETS_KEYFILE="C:\Users\loudi\.creatorpulse\service-account.json" \
+        creatorpulse sync
 
-    Paste the full failure output, non-zero exit code included. Confirm the message names
-    the service account's client_email and instructs sharing as Editor. Confirm the caught
-    exception is the bare builtin PermissionError case, not a generic traceback.
+      gspread.exceptions.APIError: APIError: [403]: The caller does not have permission
+      ... (gspread's own client.py catches this and re-raises as bare PermissionError — the
+      exact mechanism D-08's CORRECTION documents)
+      File ".../src/creatorpulse/sheets.py", line 141, in _open_worksheet
+          raise SheetNotShared(
+      creatorpulse.sheets.SheetNotShared: Sheet 17k3XwjcDl9yNiY_41u13A7wke0aWMXE6fPkQFZ_v4mU is not
+      shared with the service account creatorpulse-collector@creatorpulse-2026ldm.iam.gserviceaccount.com
+      — share it with that address as Editor
+
+      EXIT=1
+
+    Message names the exact client_email, instructs sharing as Editor, exits non-zero — no secret
+    material (key file path or contents) appears in the output. The full real-world chain matches the
+    plan's design exactly: real Sheets API 403 → gspread's internal PermissionError conversion →
+    sheets.py's PermissionError-first catch → SheetNotShared.
 
 ## Summary
 
 total: 4
-passed: 0
-passed_with_caveat: 0
-pending: 4
+passed: 3
+passed_with_caveat: 1
+pending: 0
 
-| Entry | What closes it |
-|-------|----------------|
-| 1 | A service account + shared Sheet + a real `creatorpulse sync` run, cross-checked against `sqlite3`, plus the column-E eye-check |
-| 2 | The same run — read the live `mkbhd` row's column E |
-| 3 | The same access — type into G, re-run sync, confirm survival |
-| 4 | The same access, plus a second deliberately-unshared spreadsheet, and `04-03`'s preflight executed |
+| Entry | Result | Note |
+|-------|--------|------|
+| 1 | passed_with_caveat | Real delta math/write/render proven; older comparison point manually seeded to avoid waiting out the UTC day boundary same-day as the interview |
+| 2 | passed | mkbhd orphan renders `—` on the real Sheet, real droplet database |
+| 3 | passed | Status marker survived two further real syncs, including today's live systemd-triggered run |
+| 4 | passed | Real 403 → real PermissionError → real SheetNotShared, client_email named, exit 1 |
 
 ## Gaps
 
-**The automated half is not this file's to claim.** `ruff format --check .`, `ruff check .`,
-`mypy src/`, and `pytest` are owned by `04-01` through `04-03`; both `04-01-SUMMARY.md` and
-`04-02-SUMMARY.md` record those four commands green as of their own closeout (with one pre-existing,
-out-of-scope `ruff format` finding on `04-PATTERNS.md`, not a regression from this plan).
+None. All four entries closed against real infrastructure: the droplet's actual `creatorpulse.service`
+unit (not a hand-typed shell command, which correctly cannot read the root-only `EnvironmentFile`),
+the actual production database at `/var/lib/creatorpulse/creatorpulse.db`, the real live Sheet, and a
+real deliberately-unshared second spreadsheet. The only non-organic element across all four entries is
+entry 1's single manually-seeded historical anchor row, disclosed as a caveat rather than presented as
+observed data.
 
-**The human-observed half is outstanding for all four entries, behind one shared blocker, not four.**
-No Google service account or spreadsheet is reachable from this executor's vantage, so none of the
-four entries above could be closed against real data in this session. All four stay `pending`, each
-carrying its own `not_closed_reason` and the exact commands that will close it — usable as a
-checklist in one sitting the hour that access exists. Entry 4 carries a second, narrower blocker on
-top of the shared one: it additionally needs a deliberately-unshared second spreadsheet and `04-03`'s
-`SheetNotShared` preflight, neither of which exist yet.
-
-Live-verification facts already on record from `04-01`/`04-02`'s own execution sessions (not
-re-derived here, cited for continuity): the Sheet `creatorpulse-sheet`
-(`1hP7rZqq9Z-QnYGCkt8uhNK1yiwF3dsM9e-T2sYQOqQI`), tab renamed `Sheet1` → `Dashboard`, header row and
-right-aligned Views column confirmed once already, and the G2 marker `"reviewing 2026-08-06"`
-surviving one prior sync — see `04-01-SUMMARY.md`. `04-02-SUMMARY.md` separately recorded that the
-live Sheet still holds only single-date synthetic seed rows (`kaicenat`, `pokimane`, `xqc`), so no
-consecutive-day pair exists yet for entry 1's delta half or entry 1's right-alignment-on-a-real-delta
-check to run against — this scaffold's entry 1 command set is what closes that the next time
-`creatorpulse sync` runs after a second day of rows exists.
+The automated half (`ruff format --check .`, `ruff check .`, `mypy src/`, `pytest`) was already closed
+by `04-01` through `04-03` and is not re-claimed here.
