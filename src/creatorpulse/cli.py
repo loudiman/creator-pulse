@@ -6,6 +6,8 @@ import sys
 import time
 from pathlib import Path
 
+import gspread
+
 from creatorpulse import sheets
 from creatorpulse.collector import collect_once
 from creatorpulse.config import (
@@ -17,6 +19,7 @@ from creatorpulse.config import (
     validate,
 )
 from creatorpulse.db import connect
+from creatorpulse.sheets import SheetNotShared, SheetsKeyfileUnusable
 
 logger = logging.getLogger("creatorpulse")
 
@@ -42,6 +45,10 @@ def run_collect(config_path: Path, db_path: Path) -> int:
       2  creators.yaml failed validation — nothing opened, nothing fetched (CFG-03, D-11).
       *  a run that DIES part way re-raises after its `runs` row is written (D-16), so the
          interpreter exits non-zero on its own. That is the case a non-zero code means.
+      *  a Sheets sync failure (04-03, D-07) re-raises the same way, after the metric rows
+         and the `runs` row are already committed — the process exits non-zero and systemd
+         marks the unit failed, intended per PITFALLS.md §18(d): a Sheet quietly showing
+         yesterday's numbers has no other symptom. The next day's timer run is the retry.
 
     Why this matters operationally: systemd marks a unit `failed` on any non-zero exit.
     Returning 1 for a run that wrote most of its rows would leave `systemctl --failed`
@@ -68,6 +75,26 @@ def run_collect(config_path: Path, db_path: Path) -> int:
     result = collect_once(conn, creators)
     conn.close()
     logger.info("Run wrote %d rows with %d failures", result.rows_written, result.failure_count)
+
+    try:
+        resolved = resolve_sheets_config()
+        if resolved is None:
+            raise SheetsKeyfileUnusable(
+                "Sheets configuration missing: set CREATORPULSE_SHEET_ID and "
+                "CREATORPULSE_SHEETS_KEYFILE"
+            )
+        sheet_id, keyfile = resolved
+        sheets_conn = connect(db_path, create=False)
+        sheets.sync(sheets_conn, sheet_id, keyfile)
+        sheets_conn.close()
+    except (SheetNotShared, SheetsKeyfileUnusable, gspread.exceptions.APIError) as exc:
+        logger.error(
+            "Sheets sync failed — metric rows and the runs row are already committed; "
+            "the next timer run is the retry: %s",
+            exc,
+        )
+        raise
+
     elapsed = time.monotonic() - start
     logger.info("Run complete in %.2f seconds", elapsed)
     return 0
