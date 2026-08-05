@@ -254,6 +254,12 @@ def test_run_collect_fourth_creator_needs_no_code_change(
     config_path.write_text(base_text + extra_entry, encoding="utf-8")
     db_path = tmp_path / "creatorpulse.db"
 
+    # 04-03: run_collect() now syncs the Sheet too. This test is about the collector, not
+    # Sheets, so the sync is stubbed to a no-op rather than exercised.
+    monkeypatch.setenv("CREATORPULSE_SHEET_ID", "SHEETID")
+    monkeypatch.setenv("CREATORPULSE_SHEETS_KEYFILE", str(tmp_path / "keyfile.json"))
+    monkeypatch.setattr("creatorpulse.cli.sheets.sync", lambda *a, **kw: 0)
+
     exit_code = run_collect(config_path, db_path)
     assert exit_code == 0
 
@@ -285,6 +291,12 @@ def test_run_collect_returns_zero_when_a_source_failed_but_the_run_completed(
     config_path = tmp_path / "creators.yaml"
     config_path.write_text(CREATORS_YAML.read_text(encoding="utf-8"), encoding="utf-8")
     db_path = tmp_path / "creatorpulse.db"
+
+    # 04-03: run_collect() now syncs the Sheet too. This test is about the collector, not
+    # Sheets, so the sync is stubbed to a no-op rather than exercised.
+    monkeypatch.setenv("CREATORPULSE_SHEET_ID", "SHEETID")
+    monkeypatch.setenv("CREATORPULSE_SHEETS_KEYFILE", str(tmp_path / "keyfile.json"))
+    monkeypatch.setattr("creatorpulse.cli.sheets.sync", lambda *a, **kw: 0)
 
     exit_code = run_collect(config_path, db_path)
 

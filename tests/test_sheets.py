@@ -6,6 +6,7 @@ and client construction is intercepted via monkeypatch, the same idiom tests/tes
 for requests.get. This file never calls service_account or open_by_key.
 """
 
+import json
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -13,13 +14,17 @@ from unittest.mock import Mock
 
 import gspread
 import pytest
+import requests
 from gspread.utils import ValueInputOption
 
+from creatorpulse.cli import run_collect
 from creatorpulse.db import connect, upsert_metric
 from creatorpulse.models import MetricRecord
 from creatorpulse.sheets import (
     DELTA_PLACEHOLDER,
     HEADERS,
+    SheetNotShared,
+    SheetsKeyfileUnusable,
     build_dashboard_rows,
     fetch_latest_rows,
     sync,
@@ -44,6 +49,21 @@ def _record(**overrides: Any) -> MetricRecord:
 
 def _worksheet() -> Mock:
     return Mock(spec=gspread.Worksheet)
+
+
+def _write_keyfile(tmp_path: Path, client_email: str) -> Path:
+    keyfile = tmp_path / "keyfile.json"
+    keyfile.write_text(json.dumps({"client_email": client_email}), encoding="utf-8")
+    return keyfile
+
+
+def _api_error(status_code: int) -> gspread.exceptions.APIError:
+    """A real gspread.exceptions.APIError, built the way gspread itself builds one: from a
+    response double carrying status_code and a .json() body with an error object."""
+    resp = Mock(spec=requests.Response)
+    resp.status_code = status_code
+    resp.json.return_value = {"error": {"code": status_code, "status": "ERROR", "message": "boom"}}
+    return gspread.exceptions.APIError(resp)
 
 
 def test_sync_writes_dashboard_once_latest_row_only_ordered(
@@ -362,3 +382,162 @@ def test_sync_write_range_never_names_column_g(
     assert "G" not in range_name
     assert values[0] == HEADERS
     assert all(len(row) == 6 for row in values)
+
+
+# --- 04-03 Task 3: one fixture case per failure branch ---------------------------------
+
+_FAKE_EMAIL = "creatorpulse-test@example.iam.gserviceaccount.com"
+
+
+def test_unshared_sheet_raises_sheet_not_shared_naming_client_email_and_editor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    keyfile = _write_keyfile(tmp_path, _FAKE_EMAIL)
+    client = Mock()
+    client.open_by_key.side_effect = PermissionError()
+    monkeypatch.setattr(gspread, "service_account", lambda **kw: client)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(SheetNotShared) as exc_info:
+        sync(conn, "SHEETID", keyfile)
+
+    message = str(exc_info.value)
+    assert _FAKE_EMAIL in message
+    assert "Editor" in message
+
+
+def test_viewer_only_share_raises_at_write_naming_client_email_and_editor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    keyfile = _write_keyfile(tmp_path, _FAKE_EMAIL)
+    ws = _worksheet()
+    ws.update.side_effect = _api_error(403)
+    spreadsheet = Mock()
+    spreadsheet.worksheet.return_value = ws
+    client = Mock()
+    client.open_by_key.return_value = spreadsheet
+    monkeypatch.setattr(gspread, "service_account", lambda **kw: client)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(SheetNotShared) as exc_info:
+        sync(conn, "SHEETID", keyfile)
+
+    message = str(exc_info.value)
+    assert _FAKE_EMAIL in message
+    assert "Editor" in message
+
+
+def test_unknown_spreadsheet_id_raises_sheet_not_shared_naming_env_var(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = Mock()
+    client.open_by_key.side_effect = gspread.exceptions.SpreadsheetNotFound()
+    monkeypatch.setattr(gspread, "service_account", lambda **kw: client)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(SheetNotShared) as exc_info:
+        sync(conn, "BADSHEETID", tmp_path / "keyfile.json")
+
+    assert "CREATORPULSE_SHEET_ID" in str(exc_info.value)
+
+
+def test_keyfile_absent_raises_before_any_network_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    keyfile = tmp_path / "never-created.json"
+    open_by_key = Mock()
+    monkeypatch.setattr(gspread.Client, "open_by_key", open_by_key)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(SheetsKeyfileUnusable) as exc_info:
+        sync(conn, "SHEETID", keyfile)
+
+    message = str(exc_info.value)
+    assert str(keyfile) in message
+    assert "CREATORPULSE_SHEETS_KEYFILE" in message
+    open_by_key.assert_not_called()
+
+
+def test_keyfile_present_but_not_json_raises_before_any_network_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    keyfile = tmp_path / "keyfile.json"
+    keyfile.write_text("not json", encoding="utf-8")
+    open_by_key = Mock()
+    monkeypatch.setattr(gspread.Client, "open_by_key", open_by_key)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(SheetsKeyfileUnusable) as exc_info:
+        sync(conn, "SHEETID", keyfile)
+
+    message = str(exc_info.value)
+    assert str(keyfile) in message
+    assert "CREATORPULSE_SHEETS_KEYFILE" in message
+    open_by_key.assert_not_called()
+
+
+def test_transient_api_failure_propagates_unrelabelled_at_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = Mock()
+    client.open_by_key.side_effect = _api_error(500)
+    monkeypatch.setattr(gspread, "service_account", lambda **kw: client)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(gspread.exceptions.APIError):
+        sync(conn, "SHEETID", tmp_path / "keyfile.json")
+
+
+def test_transient_api_failure_propagates_unrelabelled_at_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ws = _worksheet()
+    ws.update.side_effect = _api_error(429)
+    spreadsheet = Mock()
+    spreadsheet.worksheet.return_value = ws
+    client = Mock()
+    client.open_by_key.return_value = spreadsheet
+    monkeypatch.setattr(gspread, "service_account", lambda **kw: client)
+
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    with pytest.raises(gspread.exceptions.APIError):
+        sync(conn, "SHEETID", tmp_path / "keyfile.json")
+
+
+def test_run_collect_reraises_sheets_sync_failure_after_runs_row_committed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    config_path = tmp_path / "creators.yaml"
+    config_path.write_text(
+        "creators:\n"
+        "  - id: tiktok-only\n"
+        "    name: TikTok Only\n"
+        "    sources:\n"
+        "      tiktok: someone\n",
+        encoding="utf-8",
+    )
+    db_path = tmp_path / "creatorpulse.db"
+    monkeypatch.setenv("CREATORPULSE_SHEET_ID", "SHEETID")
+    monkeypatch.setenv("CREATORPULSE_SHEETS_KEYFILE", str(tmp_path / "keyfile.json"))
+
+    def _raise_sheet_not_shared(*args: object, **kwargs: object) -> int:
+        raise SheetNotShared("test double: not shared")
+
+    monkeypatch.setattr("creatorpulse.cli.sheets.sync", _raise_sheet_not_shared)
+
+    with caplog.at_level("ERROR", logger="creatorpulse"), pytest.raises(SheetNotShared):
+        run_collect(config_path, db_path)
+
+    error_messages = [r.getMessage() for r in caplog.records if r.levelname == "ERROR"]
+    assert any("Sheets sync failed" in msg for msg in error_messages)
+
+    conn = connect(db_path, create=False)
+    failure_count = conn.execute("SELECT failure_count FROM runs").fetchone()[0]
+    assert failure_count == 0  # the Sheets failure never lands in the source-fetch column

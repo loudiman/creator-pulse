@@ -79,6 +79,12 @@ def test_run_collect_logs_both_resolved_paths(
     response.raise_for_status.return_value = None
     monkeypatch.setattr("creatorpulse.sources.youtube.requests.get", lambda *a, **kw: response)
 
+    # 04-03: run_collect() now syncs the Sheet too. This test is about resolved paths, not
+    # Sheets, so the sync is stubbed to a no-op rather than exercised.
+    monkeypatch.setenv("CREATORPULSE_SHEET_ID", "SHEETID")
+    monkeypatch.setenv("CREATORPULSE_SHEETS_KEYFILE", str(tmp_path / "keyfile.json"))
+    monkeypatch.setattr("creatorpulse.cli.sheets.sync", lambda *a, **kw: 0)
+
     with caplog.at_level("INFO", logger="creatorpulse"):
         run_collect(config_path, db_path)
 
