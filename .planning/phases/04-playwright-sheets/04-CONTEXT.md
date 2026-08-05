@@ -145,13 +145,23 @@ interview answer than a half-finished scraper.
   author chose "you decide".)*
   — **Reversibility:** reversible.
 
-- **D-08:** The **SHEET-07 preflight wraps `open_by_key` on the real path, every run.** Catch
-  gspread's `APIError` / `SpreadsheetNotFound`, read `client_email` out of the service-account JSON,
-  and re-raise a named exception whose message says: share the Sheet with `<client_email>` as
-  Editor. A separate one-shot `sheets-check` command was rejected — it would leave the daily 08:00
-  path unguarded, so a permission revoked weeks later produces a raw 403 with nobody watching.
-  Criterion 5's surviving half is then proven by pasting the actual error text. *(Claude's call —
-  the author chose "you decide".)*
+- **D-08:** The **SHEET-07 preflight wraps `open_by_key` on the real path, every run.** Read
+  `client_email` out of the service-account JSON and re-raise a named exception whose message says:
+  share the Sheet with `<client_email>` as Editor. A separate one-shot `sheets-check` command was
+  rejected — it would leave the daily 08:00 path unguarded, so a permission revoked weeks later
+  produces a raw 403 with nobody watching. Criterion 4 is then proven by pasting the actual error
+  text. *(Claude's call — the author chose "you decide".)*
+
+  > **CORRECTION 2026-08-05, verified against the installed gspread 6.2.1 during `04-01` planning.**
+  > This decision originally said to catch `APIError` / `SpreadsheetNotFound`. That is wrong for the
+  > primary case: **an unshared Sheet raises a bare builtin `PermissionError` with no message.** A
+  > preflight catching only the two gspread exceptions would miss exactly the failure SHEET-07 exists
+  > to catch, and the raw 403 would reach the journal unannotated. Catch `PermissionError` **first**,
+  > and keep `gspread.exceptions.APIError` / `SpreadsheetNotFound` as the secondary arms.
+  > Note also that `gspread.APIError` does not exist — the path is `gspread.exceptions.APIError`.
+  > `open_by_key` is **not** lazy (`Spreadsheet.__init__` calls `fetch_sheet_metadata()`), which
+  > confirms it as the correct call site for this preflight rather than the first write.
+
   — **Reversibility:** reversible.
 
 ### Configuration & Secrets
