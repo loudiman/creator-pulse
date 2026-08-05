@@ -177,9 +177,11 @@ def sync(conn: sqlite3.Connection, sheet_id: str, keyfile: Path) -> int:
         if exc.response.status_code == 403:
             # The Viewer-not-Editor case: open_by_key succeeded (reading is exactly what
             # Viewer permits), so a preflight on the open alone cannot see this.
+            email = _client_email_from_keyfile(keyfile)
+            addressee = email if email is not None else "the address in the key file"
             raise SheetNotShared(
                 f"Sheet {sheet_id} opened for reading but the write was refused — the share "
-                "is Viewer, and it needs to be Editor"
+                f"is Viewer, and {addressee} needs to be Editor"
             ) from exc
         raise  # a 500 or 429 is a transient API failure, not a permission problem
     data_row_count = len(values) - 1
