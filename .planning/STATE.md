@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 3
 status: executing
 stopped_at: Phase 4 context gathered — Sheets only, SRC-03 and SHEET-04 cut
-last_updated: "2026-08-05T15:41:03.424Z"
+last_updated: "2026-08-05T16:03:13.923Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 3 marked complete
 progress:
@@ -103,6 +103,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: Import KNOWN_PLATFORMS via module-qualified 'from creatorpulse import sources as source_registry' so config.py has exactly one grep-able KNOWN_PLATFORMS line, matching the plan's own acceptance gate
 - [Phase ?]: upsert_metric deliberately outside the per-pair try/except: a source-fetch failure isolates per D-15, a db write failure propagates through the outer try/finally instead of being counted per-pair
 - [Phase ?]: Task 3 precondition re-checked and confirmed unmet (no SSH, no env, no credentials) — 03-UAT.md all 5 entries PENDING with not_closed_reason and close-later commands, Phase 3 closes PARTIAL
+- [Phase ?]: Google service account provisioned 2026-08-05: project creatorpulse-2026ldm, sheets.googleapis.com enabled, SA creatorpulse-collector@creatorpulse-2026ldm.iam.gserviceaccount.com. Key at C:\Users\loudi\.creatorpulse\service-account.json locally (outside the repo) and /etc/creatorpulse/service-account.json on the droplet. NO IAM role granted — Sheet access comes from sharing the doc with client_email, never from project IAM.
+- [Phase ?]: Sheet wired 2026-08-05: CREATORPULSE_SHEET_ID=1hP7rZqq9Z-QnYGCkt8uhNK1yiwF3dsM9e-T2sYQOqQI (creatorpulse-sheet, link-editable by author's accepted choice). Tab renamed Sheet1 -> Dashboard. Verified live: token minted with scope auth/spreadsheets ONLY (no Drive), open_by_key succeeds, and a write succeeded — proving Editor not Viewer. D-09's narrowed scope is now verified against a live credential, not just gspread source.
 
 ### Pending Todos
 

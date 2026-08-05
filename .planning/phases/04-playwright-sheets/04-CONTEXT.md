@@ -93,8 +93,18 @@ interview answer than a half-finished scraper.
   later shifts Status out from under Phase 5's `e.range.getColumn()` check. Any future column is a
   deliberate migration performed in the same sitting as the Apps Script update — never a change
   made inside the daily write path.
-  — **Reversibility:** one-way in practice — column G's position is a published contract with
-  human-built Apps Script code that this repo does not contain and cannot refactor.
+
+  > **Tab name, added 2026-08-05 — the same class of frozen contract, and easy to overlook.** The
+  > live Sheet's tab is named **`Dashboard`**, renamed from Google's default `Sheet1` during
+  > credential setup. Every artifact in this phase names that tab, and Phase 5's `onOpen` menu and
+  > `onEdit` trigger will bind to it. Renaming it later breaks the Apps Script exactly the way
+  > inserting a column does — and with the same invisibility, because the collector goes on writing
+  > happily to a tab nothing is listening to. **Freeze the tab name alongside the column set.**
+  > (Sheet: `creatorpulse-sheet`, id `1hP7rZqq9Z-QnYGCkt8uhNK1yiwF3dsM9e-T2sYQOqQI`.)
+
+  — **Reversibility:** one-way in practice — column G's position, and now the tab name, are a
+  published contract with human-built Apps Script code that this repo does not contain and cannot
+  refactor.
 
 - **D-04:** The write is **one call to `worksheet.update`** covering `A1:F{n+1}` — headers
   included, every run. Column G is outside the range and is never touched, which is how SHEET-06 is
