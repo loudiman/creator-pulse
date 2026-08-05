@@ -17,7 +17,13 @@ from gspread.utils import ValueInputOption
 
 from creatorpulse.db import connect, upsert_metric
 from creatorpulse.models import MetricRecord
-from creatorpulse.sheets import HEADERS, build_dashboard_rows, fetch_latest_rows, sync
+from creatorpulse.sheets import (
+    DELTA_PLACEHOLDER,
+    HEADERS,
+    build_dashboard_rows,
+    fetch_latest_rows,
+    sync,
+)
 
 
 def _record(**overrides: Any) -> MetricRecord:
@@ -210,3 +216,161 @@ def test_baseline_row_with_zero_views_returns_zero_not_none(tmp_path: Path) -> N
     rows = fetch_latest_rows(conn)
 
     assert rows[0][5] == 0
+
+
+# --- 04-02 Task 2: one conditional expression, and the seven cases that pin it down ----
+
+
+def test_delta_present_both_sides_non_null_puts_the_difference_in_column_e(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=4200))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert values[1][4] == 800
+    assert values[1][4] != DELTA_PLACEHOLDER
+
+
+def test_delta_no_baseline_row_puts_the_marker_and_row_still_appears(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert len(values) == 2  # header + one data row -- the row did not vanish
+    assert values[1][0] == "c1"
+    assert values[1][4] == DELTA_PLACEHOLDER
+
+
+def test_delta_gap_two_days_back_puts_the_marker_not_the_two_day_difference(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 3), views=1000))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert values[1][4] == DELTA_PLACEHOLDER
+    assert values[1][4] != 4000  # 5000 - 1000, the widened-lookback answer this forbids
+
+
+def test_delta_month_and_leap_day_boundaries_produce_the_real_difference(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(
+        conn, _record(creator_id="month", metric_date=date(2026, 2, 28), views=100)
+    )
+    upsert_metric(
+        conn, _record(creator_id="month", metric_date=date(2026, 3, 1), views=150)
+    )
+    upsert_metric(
+        conn, _record(creator_id="leap", metric_date=date(2028, 2, 29), views=100)
+    )
+    upsert_metric(
+        conn, _record(creator_id="leap", metric_date=date(2028, 3, 1), views=150)
+    )
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+    by_creator = {row[0]: row for row in values[1:]}
+
+    assert by_creator["month"][4] == 50
+    assert by_creator["leap"][4] == 50
+
+
+def test_delta_zero_renders_as_zero_not_the_marker(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=5000))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert values[1][4] == 0
+    assert values[1][4] != DELTA_PLACEHOLDER
+
+
+def test_delta_negative_renders_negative_unchanged(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=1000))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=900))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert values[1][4] == -100
+
+
+def test_delta_today_views_null_with_non_null_baseline_puts_the_marker(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=4200))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=None))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert values[1][4] == DELTA_PLACEHOLDER
+
+
+def test_delta_baseline_views_null_with_non_null_today_puts_the_marker(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=None))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+
+    assert values[1][4] == DELTA_PLACEHOLDER
+
+
+def test_delta_zero_baseline_versus_null_baseline_adjacency(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="zero-base", metric_date=date(2026, 8, 4), views=0))
+    upsert_metric(
+        conn, _record(creator_id="zero-base", metric_date=date(2026, 8, 5), views=700)
+    )
+    upsert_metric(
+        conn, _record(creator_id="null-base", metric_date=date(2026, 8, 5), views=700)
+    )
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+    by_creator = {row[0]: row for row in values[1:]}
+
+    assert by_creator["zero-base"][4] == 700  # real subtraction against a real zero
+    assert by_creator["null-base"][4] == DELTA_PLACEHOLDER
+
+
+def test_delta_column_type_is_int_never_bool_str_or_float(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=4200))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    values = build_dashboard_rows(fetch_latest_rows(conn))
+    cell = values[1][4]
+
+    assert isinstance(cell, int)
+    assert not isinstance(cell, bool)
+
+
+def test_sync_write_range_never_names_column_g(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=4200))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    ws = _worksheet()
+    monkeypatch.setattr("creatorpulse.sheets._open_worksheet", lambda *a, **kw: ws)
+
+    sync(conn, "SHEETID", Path("/fake/keyfile.json"))
+
+    values, range_name = ws.update.call_args.args
+    assert "G" not in range_name
+    assert values[0] == HEADERS
+    assert all(len(row) == 6 for row in values)
