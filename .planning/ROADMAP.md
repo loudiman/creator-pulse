@@ -285,7 +285,7 @@ Notes:
 **Goal**: The Sheet stops being a dump and becomes a two-way surface — it formats itself and talks back to Discord
 **Mode:** mvp
 **UI hint**: no
-**Owner:** human
+**Owner:** mixed *(changed from `human` on 2026-08-06 — see Notes)*
 **Depends on**: Phase 4
 **Requirements**: SCRIPT-01, SCRIPT-02, SCRIPT-03, SCRIPT-04
 **Success Criteria** (what must be TRUE):
@@ -300,7 +300,8 @@ Notes:
 
 Notes:
 
-- **Entirely human-built — roughly 100 lines typed by hand. The agent does not generate this code.** It is the author's biggest gap and the interviewer's deepest skill, which is exactly why it is not delegated.
+- ~~**Entirely human-built — roughly 100 lines typed by hand. The agent does not generate this code.** It is the author's biggest gap and the interviewer's deepest skill, which is exactly why it is not delegated.~~
+- **AMENDED 2026-08-06 — owner changed `human` → `mixed`.** With roughly ten hours to the interview and Phases 5, 6, and 7 all outstanding, the author reclassified this phase. The agent writes the Apps Script into `apps-script/Code.gs`; the author reads it line by line with a walkthrough, pastes it into the Sheets editor, and must still be able to explain it cold. The reason is the clock, recorded as the clock. **Criterion 5 is unchanged and is the control that replaces hand-typing** — it closes only when the author writes the `onEdit` event-object and webhook explanation into `05-UAT.md` in their own words, unaided. `.claude/CLAUDE.md` Hard Rule 2 carries the matching amendment; rules 1 (VPS/systemd) and 3 (Discord Developer Portal) are untouched. Full reasoning: `.planning/phases/05-apps-script/05-CONTEXT.md` D-01 through D-04.
 - Hard structural dependency on Phase 4: the Dashboard column layout must be final and stable, with Status last, before triggers attach to it.
 - The Status-edit → Discord round trip is the single most interesting demo moment in the project. Rehearse it.
 - Never cut this phase.

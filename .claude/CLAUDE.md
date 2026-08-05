@@ -9,12 +9,27 @@ generate them into a scratch file for the author to copy:
 
 1. **VPS provisioning and systemd** — SSH config, non-root user, UFW rules, `.service` and
    `.timer` unit files. You may write Python the units invoke; you may not write the units.
-2. **The entire Apps Script layer** — `onOpen`, `onEdit`, time-driven triggers, conditional
-   formatting. Roughly 100 lines, typed by hand.
+2. ~~**The entire Apps Script layer** — `onOpen`, `onEdit`, time-driven triggers, conditional
+   formatting. Roughly 100 lines, typed by hand.~~ — **AMENDED 2026-08-06, see below.**
 3. **Discord Developer Portal setup** — bot registration, intents, scopes, invite URL. You may
    write command handlers; the author owns the permission model.
 
 If asked to produce one of these, say no and explain which phase owns it.
+
+### Amendment 2026-08-06 — rule 2 relaxed to `mixed`
+
+With roughly ten hours to the interview and Phases 5, 6, and 7 all outstanding, the author
+reclassified Phase 5 from `human` to `mixed`. **The agent now writes the Apps Script**; the author
+reads it line by line with a walkthrough, pastes it, and must still be able to explain it cold.
+The reason is the clock, and it is recorded as the clock rather than dressed up as a design
+improvement.
+
+The control that replaces hand-typing: ROADMAP criterion 5 ("the author can walk someone through
+the `onEdit` trigger's event object and the webhook call from memory") stands unchanged, and closes
+only when the author writes that explanation into `05-UAT.md` in their own words, unaided.
+
+**Rules 1 and 3 are untouched and still bind in full.** This is one scoped, dated exception, not a
+general relaxation. See `.planning/phases/05-apps-script/05-CONTEXT.md` D-01 through D-04.
 
 ## Merge rule
 

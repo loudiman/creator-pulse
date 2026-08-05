@@ -84,7 +84,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Apps Script
 
-*(entire category human-built — the agent does not generate these)*
+*(~~entire category human-built — the agent does not generate these~~ — **AMENDED 2026-08-06: Phase 5 is now `mixed`.** The agent writes `apps-script/Code.gs`; the author reads, is walked through it, pastes it, and must be able to explain it cold. Reason: the interview clock. See ROADMAP.md §"Phase 5" Notes and `.planning/phases/05-apps-script/05-CONTEXT.md` D-01/D-02.)*
 
 - [ ] **SCRIPT-01**: Sheet has an `onOpen` custom menu
 - [ ] **SCRIPT-02**: A time-driven trigger runs on schedule
