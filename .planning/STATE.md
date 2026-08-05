@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 3
+current_phase: 4
+current_phase_name: Playwright & Sheets
 status: executing
-stopped_at: Phase 4 context gathered — Sheets only, SRC-03 and SHEET-04 cut
-last_updated: "2026-08-05T17:04:36.372Z"
-last_activity: 2026-08-05
-last_activity_desc: Phase 3 marked complete
+stopped_at: Completed 04-01-PLAN.md (tracer, both checkpoints resolved)
+last_updated: "2026-08-05T17:26:35.157Z"
+last_activity: 2026-08-06
+last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 16
-  completed_plans: 11
-current_phase_name: Collector Core & API Sources
+  completed_plans: 12
 ---
 
 # Project State
@@ -23,16 +23,16 @@ current_phase_name: Collector Core & API Sources
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** The unattended daily run — a timer fires, real numbers land in the database, the Sheet reflects them, and Discord says so, with no human in the loop.
-**Current focus:** Phase 3 — Collector Core & API Sources
+**Current focus:** Phase 4 — Playwright & Sheets
 
 ## Current Position
 
-Phase: 3 — COMPLETE
-Plan: 5 of 5
+Phase: 4 (Playwright & Sheets) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-05 — Phase 3 marked complete
+Last activity: 2026-08-06 — Phase 4 execution started
 
-Progress: [█████████░] 92%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [█████████░] 92%
 | Phase 03 P06 | 20min | 1 tasks | 3 files |
 | Phase 03 P04 | 20min | 2 tasks | 3 files |
 | Phase 03 P05 | 30min | 3 tasks | 5 files |
+| Phase 04 P01 | 45min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: Google service account provisioned 2026-08-05: project creatorpulse-2026ldm, sheets.googleapis.com enabled, SA creatorpulse-collector@creatorpulse-2026ldm.iam.gserviceaccount.com. Key at C:\Users\loudi\.creatorpulse\service-account.json locally (outside the repo) and /etc/creatorpulse/service-account.json on the droplet. NO IAM role granted — Sheet access comes from sharing the doc with client_email, never from project IAM.
 - [Phase ?]: Sheet wired 2026-08-05: CREATORPULSE_SHEET_ID=1hP7rZqq9Z-QnYGCkt8uhNK1yiwF3dsM9e-T2sYQOqQI (creatorpulse-sheet, link-editable by author's accepted choice). Tab renamed Sheet1 -> Dashboard. Verified live: token minted with scope auth/spreadsheets ONLY (no Drive), open_by_key succeeds, and a write succeeded — proving Editor not Viewer. D-09's narrowed scope is now verified against a live credential, not just gspread source.
 - [Phase ?]: Droplet Sheets wiring verified 2026-08-05: /etc/creatorpulse/service-account.json placed (creatorpulse:creatorpulse, 600), /etc/creatorpulse/creatorpulse.env carries CREATORPULSE_SHEET_ID and CREATORPULSE_SHEETS_KEYFILE. systemctl show creatorpulse.service -p EnvironmentFiles confirms the unit points at that file. /etc/creatorpulse dir tightened 755->750 root:creatorpulse (was already other-traversable, now locked to root+service group). sudo -u creatorpulse cat service-account.json succeeds -- service user reads the key on the actual runtime path, not just via systemd's env parsing. Both Google auth paths (dev machine, droplet) now proven end to end.
+- [Phase ?]: 04-01 Task 1 checkpoint resolved option-a: D-02/D-03 shipped as written, no code change (confirmation gate)
+- [Phase ?]: 04-01 Task 2 human-check resolved verified: live Sheet header row, right-aligned Views column, G2 marker survives creatorpulse sync (SHEET-06 proven live)
+- [Phase ?]: Live Sheet holds 3 synthetic seed rows (kaicenat, pokimane, xqc, YouTube only) plus G2 test marker, deliberately left in place per author instruction as proof, not cleared -- not real collected metrics, Phase 3 droplet UAT still gates real numbers
 
 ### Pending Todos
 
@@ -130,6 +134,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T13:02:40.002Z
-Stopped at: Phase 4 context gathered — Sheets only, SRC-03 and SHEET-04 cut
-Resume file: .planning/phases/04-playwright-sheets/04-CONTEXT.md
+Last session: 2026-08-05T17:26:35.115Z
+Stopped at: Completed 04-01-PLAN.md (tracer, both checkpoints resolved)
+Resume file: None

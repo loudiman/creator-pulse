@@ -43,7 +43,6 @@ Requirements for initial release. Each maps to roadmap phases.
   > `pyproject.toml` and stays installed on the droplet for the same reason.
   > "We shipped API-only, and here is the cut order that said to" is the intended interview answer.
 
-
 - [x] **SRC-04**: Every source returns the same normalized record shape; a metric the platform does not expose is NULL, never 0
 - [x] **SRC-05**: A source failing on a transient error retries with backoff before the attempt is recorded as failed
 
@@ -65,8 +64,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Sheet
 
-- [ ] **SHEET-01**: Dashboard tab shows one row per creator with the latest snapshot and its day-over-day delta
-- [ ] **SHEET-02**: Day-over-day delta is computed on view count; subscriber and follower counts are displayed but labelled coarse where the platform rounds them
+- [x] **SHEET-01**: Dashboard tab shows one row per creator with the latest snapshot and its day-over-day delta
+- [x] **SHEET-02**: Day-over-day delta is computed on view count; subscriber and follower counts are displayed but labelled coarse where the platform rounds them
 - [ ] **SHEET-03**: A creator with no prior-day row shows `—` for delta, never a delta computed against an assumed zero
 - [ ] **SHEET-04**: History tab appends one row per creator per day and is never rewritten *(CUT as of 2026-08-05 — see note below, moved to v2 as V2-SHEET-01)*
 
@@ -79,9 +78,8 @@ Requirements for initial release. Each maps to roadmap phases.
   > re-runs, roughly 30–40 lines plus a fixture test. Recorded in
   > `.planning/phases/04-playwright-sheets/04-CONTEXT.md` §"Deferred Ideas".
 
-
-- [ ] **SHEET-05**: Sheet writes are batched — at most one write call per tab per run, never cell-by-cell
-- [ ] **SHEET-06**: The human-edited Status column survives a Dashboard refresh untouched
+- [x] **SHEET-05**: Sheet writes are batched — at most one write call per tab per run, never cell-by-cell
+- [x] **SHEET-06**: The human-edited Status column survives a Dashboard refresh untouched
 - [ ] **SHEET-07**: A Sheet not shared with the service account fails with an explicit instruction naming the `client_email` to share it with, not a raw 403
 
 ### Apps Script
@@ -188,12 +186,12 @@ Which phases cover which requirements. Populated during roadmap creation.
 | RUN-03 | Phase 2: VPS & systemd | Complete |
 | RUN-04 | Phase 2: VPS & systemd | Complete |
 | RUN-05 | Phase 3: Collector Core & API Sources | Complete |
-| SHEET-01 | Phase 4: Playwright & Sheets | Pending |
-| SHEET-02 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-01 | Phase 4: Playwright & Sheets | Complete |
+| SHEET-02 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-03 | Phase 4: Playwright & Sheets | Pending |
 | SHEET-04 | ~~Phase 4~~ — **CUT 2026-08-05** (cut-order item 3) | Cut → V2-SHEET-01 |
-| SHEET-05 | Phase 4: Playwright & Sheets | Pending |
-| SHEET-06 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-05 | Phase 4: Playwright & Sheets | Complete |
+| SHEET-06 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-07 | Phase 4: Playwright & Sheets | Pending |
 | SCRIPT-01 | Phase 5: Apps Script | Pending |
 | SCRIPT-02 | Phase 5: Apps Script | Pending |

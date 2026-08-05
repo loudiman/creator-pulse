@@ -139,3 +139,8 @@ None new beyond what Task 1's `user_setup` block already required — the Google
 ---
 *Phase: 04-playwright-sheets*
 *Completed: 2026-08-06*
+
+## Self-Check: PASSED
+- FOUND: .planning/phases/04-playwright-sheets/04-01-SUMMARY.md
+- FOUND commit: 5f7f86d (Task 2 tracer implementation)
+- FOUND commit: b5c1d65 (this SUMMARY commit)

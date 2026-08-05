@@ -210,12 +210,12 @@ Notes:
   3. The author types into the Status column, re-runs the collector, and the typed value is still there afterwards
   4. A Sheet that has not been shared with the service account fails with a message naming the exact `client_email` to share it with
 
-**Plans**: 0/4 plans executed
+**Plans**: 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Tracer: two env vars to a real Sheet, one path end to end. Creates `sheets.py`, the `sync` subcommand, and `tests/test_sheets.py`. **Carries the D-03 one-way `checkpoint:decision`, so it is not autonomous.**
+- [x] 04-01-PLAN.md — Tracer: two env vars to a real Sheet, one path end to end. Creates `sheets.py`, the `sync` subcommand, and `tests/test_sheets.py`. **Carries the D-03 one-way `checkpoint:decision`, so it is not autonomous.**
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -251,25 +251,33 @@ Notes:
   in scope; the six that remain are all Sheets-side — PITFALLS.md §3 (unshared Sheet), §4
   (cell-by-cell writes), §5 (RAW vs USER_ENTERED), §6 (full-tab rewrite clobbers Status), §13 (NULL
   vs 0 in delta math), §18(d) (silently stale Sheet). Each is closed by a decision in 04-CONTEXT.md.
+
 - **No research phase needed.** `--research-phase 4` existed for TikTok's unknowable selectors. gspread
   is fully covered by STACK.md §6 and PITFALLS.md §3–6 — plan directly.
+
 - Never `.clear()` the Dashboard tab. Write only the DB-owned range `A1:F{n+1}` so the human-edited
   Status column in G survives. Status stays last, and 04-CONTEXT.md D-03 **freezes the column set for
   v1** — this layout is a contract with Phase 5's `onEdit` and conditional formatting, and inserting
   a column later shifts Status out from under both.
+
 - One write call per tab per run. Build the full 2D array in memory first. Cell-by-cell looks fine at
   four rows and breaks in front of the interviewer.
+
 - Deltas computed in Python from the database, never as Sheet formulas. Strict day-over-day:
   yesterday is `metric_date - 1 day` exactly, and a missing row reads `—`, never a number against an
   assumed zero.
+
 - `value_input_option="USER_ENTERED"` so the delta and timestamp columns land as real numbers and a
   real datetime — Phase 5's conditional formatting keys on numeric values, not strings. Verify by eye
   once: the delta column must render right-aligned.
+
 - Dashboard rows come from the database, not from `creators.yaml` (04-CONTEXT.md D-01). One
   consequence is live and deliberate: the orphan `mkbhd` row from the Phase 3 bogus-handle test
   renders with a `—` delta, which is pointable proof of DATA-04.
+
 - Playwright stays in `pyproject.toml` and stays installed on the droplet. Removing it is a
   gate-touching change with no benefit, and keeping it keeps the source's return cheap.
+
 - Manual gate: the author watches real data reach the real Sheet.
 
 ### Phase 5: Apps Script
@@ -396,7 +404,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 1. Skeleton | 3/3 | Complete    | 2026-07-30 |
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
-| 4. Playwright & Sheets | 0/4 | Planned | - |
+| 4. Playwright & Sheets | 1/4 | In Progress|  |
 | 5. Apps Script | 0/TBD | Not started | - |
 | 6. Discord Bot | 0/TBD | Not started | - |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
