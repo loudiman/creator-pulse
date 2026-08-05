@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 4
 current_phase_name: Playwright & Sheets
 status: executing
-stopped_at: Completed 04-01-PLAN.md (tracer, both checkpoints resolved)
-last_updated: "2026-08-05T17:26:35.157Z"
+stopped_at: Completed 04-02-PLAN.md (day-over-day delta on views)
+last_updated: "2026-08-05T17:33:57.934Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 4 execution started
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 16
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 4 (Playwright & Sheets) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 4 execution started
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 81%
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [████████░░] 75%
 | Phase 03 P04 | 20min | 2 tasks | 3 files |
 | Phase 03 P05 | 30min | 3 tasks | 5 files |
 | Phase 04 P01 | 45min | 2 tasks | 5 files |
+| Phase 04 P02 | 35min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 04-01 Task 1 checkpoint resolved option-a: D-02/D-03 shipped as written, no code change (confirmation gate)
 - [Phase ?]: 04-01 Task 2 human-check resolved verified: live Sheet header row, right-aligned Views column, G2 marker survives creatorpulse sync (SHEET-06 proven live)
 - [Phase ?]: Live Sheet holds 3 synthetic seed rows (kaicenat, pokimane, xqc, YouTube only) plus G2 test marker, deliberately left in place per author instruction as proof, not cleared -- not real collected metrics, Phase 3 droplet UAT still gates real numbers
+- [Phase ?]: 04-02: LATEST_ROWS_SQL left-joins metrics AS prev on date(metric_date, '-1 day'), keyed on idx_metrics_creator_date -- pair with no baseline still reaches Dashboard
+- [Phase ?]: 04-02: build_dashboard_rows column E is DELTA_PLACEHOLDER if views is None or prev_views is None else views - prev_views -- one conditional expression, is-None guard on both sides, zero renders 0, negative unclamped
+- [Phase ?]: 04-02: no 04-01 assertion pinned column E to DELTA_PLACEHOLDER (verified via grep), so the plan's anticipated one-line amendment did not apply -- zero lines amended/deleted
 
 ### Pending Todos
 
@@ -134,6 +138,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T17:26:35.115Z
-Stopped at: Completed 04-01-PLAN.md (tracer, both checkpoints resolved)
+Last session: 2026-08-05T17:33:57.898Z
+Stopped at: Completed 04-02-PLAN.md (day-over-day delta on views)
 Resume file: None

@@ -66,7 +66,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SHEET-01**: Dashboard tab shows one row per creator with the latest snapshot and its day-over-day delta
 - [x] **SHEET-02**: Day-over-day delta is computed on view count; subscriber and follower counts are displayed but labelled coarse where the platform rounds them
-- [ ] **SHEET-03**: A creator with no prior-day row shows `—` for delta, never a delta computed against an assumed zero
+- [x] **SHEET-03**: A creator with no prior-day row shows `—` for delta, never a delta computed against an assumed zero
 - [ ] **SHEET-04**: History tab appends one row per creator per day and is never rewritten *(CUT as of 2026-08-05 — see note below, moved to v2 as V2-SHEET-01)*
 
   > **SHEET-04 is cut.** Cut-order item 3, exercised alongside SRC-03 in the same Phase 4 discussion.
@@ -188,7 +188,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | RUN-05 | Phase 3: Collector Core & API Sources | Complete |
 | SHEET-01 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-02 | Phase 4: Playwright & Sheets | Complete |
-| SHEET-03 | Phase 4: Playwright & Sheets | Pending |
+| SHEET-03 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-04 | ~~Phase 4~~ — **CUT 2026-08-05** (cut-order item 3) | Cut → V2-SHEET-01 |
 | SHEET-05 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-06 | Phase 4: Playwright & Sheets | Complete |
