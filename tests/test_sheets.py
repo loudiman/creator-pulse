@@ -264,18 +264,10 @@ def test_delta_month_and_leap_day_boundaries_produce_the_real_difference(
     tmp_path: Path,
 ) -> None:
     conn = connect(tmp_path / "creatorpulse.db", create=True)
-    upsert_metric(
-        conn, _record(creator_id="month", metric_date=date(2026, 2, 28), views=100)
-    )
-    upsert_metric(
-        conn, _record(creator_id="month", metric_date=date(2026, 3, 1), views=150)
-    )
-    upsert_metric(
-        conn, _record(creator_id="leap", metric_date=date(2028, 2, 29), views=100)
-    )
-    upsert_metric(
-        conn, _record(creator_id="leap", metric_date=date(2028, 3, 1), views=150)
-    )
+    upsert_metric(conn, _record(creator_id="month", metric_date=date(2026, 2, 28), views=100))
+    upsert_metric(conn, _record(creator_id="month", metric_date=date(2026, 3, 1), views=150))
+    upsert_metric(conn, _record(creator_id="leap", metric_date=date(2028, 2, 29), views=100))
+    upsert_metric(conn, _record(creator_id="leap", metric_date=date(2028, 3, 1), views=150))
 
     values = build_dashboard_rows(fetch_latest_rows(conn))
     by_creator = {row[0]: row for row in values[1:]}
@@ -332,12 +324,8 @@ def test_delta_baseline_views_null_with_non_null_today_puts_the_marker(
 def test_delta_zero_baseline_versus_null_baseline_adjacency(tmp_path: Path) -> None:
     conn = connect(tmp_path / "creatorpulse.db", create=True)
     upsert_metric(conn, _record(creator_id="zero-base", metric_date=date(2026, 8, 4), views=0))
-    upsert_metric(
-        conn, _record(creator_id="zero-base", metric_date=date(2026, 8, 5), views=700)
-    )
-    upsert_metric(
-        conn, _record(creator_id="null-base", metric_date=date(2026, 8, 5), views=700)
-    )
+    upsert_metric(conn, _record(creator_id="zero-base", metric_date=date(2026, 8, 5), views=700))
+    upsert_metric(conn, _record(creator_id="null-base", metric_date=date(2026, 8, 5), views=700))
 
     values = build_dashboard_rows(fetch_latest_rows(conn))
     by_creator = {row[0]: row for row in values[1:]}

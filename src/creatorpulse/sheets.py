@@ -67,14 +67,14 @@ def build_dashboard_rows(rows: Sequence[LatestRow]) -> list[list[object]]:
     "the platform reported zero" and renders as the number zero. They must never merge.
     """
     values: list[list[object]] = [list(HEADERS)]
-    for creator_id, source, followers, views, collected_at, _prev_views in rows:
+    for creator_id, source, followers, views, collected_at, prev_views in rows:
         values.append(
             [
                 creator_id,
                 source,
                 "" if followers is None else followers,
                 "" if views is None else views,
-                DELTA_PLACEHOLDER,
+                DELTA_PLACEHOLDER if views is None or prev_views is None else views - prev_views,
                 collected_at,
             ]
         )
