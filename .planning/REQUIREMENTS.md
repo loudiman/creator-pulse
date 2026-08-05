@@ -80,7 +80,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SHEET-05**: Sheet writes are batched — at most one write call per tab per run, never cell-by-cell
 - [x] **SHEET-06**: The human-edited Status column survives a Dashboard refresh untouched
-- [x] **SHEET-07**: A Sheet not shared with the service account fails with an explicit instruction naming the `client_email` to share it with, not a raw 403
+- [ ] **SHEET-07**: A Sheet not shared with the service account fails with an explicit instruction naming the `client_email` to share it with, not a raw 403 *(corrected 2026-08-06 — 04-04 marked this complete prematurely; the `SheetNotShared` exception is implemented in 04-03, not yet executed)*
 
 ### Apps Script
 
@@ -192,7 +192,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SHEET-04 | ~~Phase 4~~ — **CUT 2026-08-05** (cut-order item 3) | Cut → V2-SHEET-01 |
 | SHEET-05 | Phase 4: Playwright & Sheets | Complete |
 | SHEET-06 | Phase 4: Playwright & Sheets | Complete |
-| SHEET-07 | Phase 4: Playwright & Sheets | Complete |
+| SHEET-07 | Phase 4: Playwright & Sheets | In progress (04-03 pending) |
 | SCRIPT-01 | Phase 5: Apps Script | Pending |
 | SCRIPT-02 | Phase 5: Apps Script | Pending |
 | SCRIPT-03 | Phase 5: Apps Script | Pending |
