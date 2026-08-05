@@ -1,10 +1,10 @@
 ---
-status: in-progress
+status: passed_with_caveats
 phase: 03-collector-core-api-sources
 source: [03-CONTEXT.md]
 started: 2026-08-05T00:00:00Z
-updated: "2026-08-05T00:00:00Z"
-blocked_reason: "Precondition unmet as of 2026-08-05 — /etc/creatorpulse/creatorpulse.env on the droplet holds blank values, Twitch credentials do not exist (SRC-02, BLOCKED-EXTERNAL), and this executor has no SSH access to the droplet. All five entries below are PENDING, not fabricated. See ## Gaps."
+updated: "2026-08-05T01:20:00Z"
+blocked_reason: "RESOLVED 2026-08-05T01:07Z. YOUTUBE_API_KEY was provisioned into /etc/creatorpulse/creatorpulse.env and the author ran the collector on creatorpulse-vps. All five entries now carry real observed evidence: 2 passed outright, 3 passed with a named caveat. No entry is fabricated and no caveat is glossed. The three residual halves — prior-day immutability, the Twitch followers instance, and cross-process concurrency — each close on their own schedule with no work outstanding today. See ## Summary."
 ---
 
 ## Current Test
@@ -19,18 +19,58 @@ expected: After adding a fourth creator entry to `creators.yaml` and re-running 
 
 why_human: Requires editing the real `creators.yaml` and running the real collector against the real (or provisioned) database; no automated check substitutes for the author performing the edit and observing both outcomes.
 
-not_closed_reason: No SSH access to the droplet from this executor, and `/etc/creatorpulse/creatorpulse.env` there still holds blank values (SRC-01's `YOUTUBE_API_KEY` unset) — `creatorpulse collect` cannot run against real data.
+not_closed_reason: CLOSED 2026-08-05T01:18Z. Was blocked on droplet access and a blank env file; `YOUTUBE_API_KEY` was provisioned and the run performed by the author on the droplet.
 
-Commands whose output belongs in the evidence block:
-- the diff/addition made to `creators.yaml` (fourth creator)
-- `creatorpulse collect` (exit code)
-- `sqlite3 <db> "select * from metrics where creator_id = '<new-id>';"`
-- the malformed-entry edit to `creators.yaml`
-- `creatorpulse collect` against the malformed config (exit code, and the stderr/log line naming creator + field)
-
-result: pending
+result: passed
 
 evidence: |
+    Observed by the author on creatorpulse-vps, 2026-08-05, both halves.
+
+    HALF A — a creator added with no code change appears.
+    Appended to creators.yaml:
+      - id: mkbhd
+        name: MKBHD
+        sources:
+          youtube: "@mkbhd"
+
+    $ sudo systemctl start creatorpulse.service && sleep 2
+    $ sqlite3 -header -column /var/lib/creatorpulse/creatorpulse.db \
+        "select creator_id, followers, views from metrics;"
+    creator_id  followers  views
+    ----------  ---------  ----------
+    xqc         2500000    1902674186
+    pokimane    6580000    95901586
+    kaicenat    8120000    439490621
+    mkbhd       21100000   5517991783
+
+    Four rows. No source file changed — only creators.yaml. CFG-01 satisfied.
+
+    HALF B — a malformed entry fails at startup naming creator and field.
+    Two entries appended sharing id `mkbhd` (the duplicate-id case D-12 exists to catch,
+    because creator_id is part of UNIQUE (creator_id, source, metric_date) and two entries
+    sharing one would silently overwrite each other's history every day).
+
+    $ sudo systemctl start creatorpulse.service
+    Job for creatorpulse.service failed because the control process exited with error code.
+
+    Aug 05 01:18:19 creatorpulse[9808]: INFO  Starting collect run using config
+        /home/creatorpulse/creator-pulse/creators.yaml, database /var/lib/creatorpulse/creatorpulse.db
+    Aug 05 01:18:19 creatorpulse[9808]: ERROR creator=mkbhd field=id: duplicate id, already
+        used by another entry
+    Aug 05 01:18:19 systemd[1]: creatorpulse.service: Main process exited, code=exited,
+        status=2/INVALIDARGUMENT
+
+    Names the creator AND the field, exits 2, and no traceback. CFG-03 satisfied.
+
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "select count(*) from runs;"
+    7
+
+    Unchanged from before the failed run — validation runs ahead of the database open, so a
+    config failure leaves no runs row at all. That asymmetry is D-16 and is deliberate.
+
+    $ git checkout creators.yaml && git status --short && echo "tree clean"
+    Updated 1 path from the index
+    tree clean
 
 ### 2. Running the collector twice on the same day leaves the total row count unchanged, and yesterday's rows are untouched — the author can see both facts in one `sqlite3` query
 
@@ -38,17 +78,46 @@ expected: A single `sqlite3` query, run before and after a same-day re-run of th
 
 why_human: Requires a real database with at least one prior day's history and a real same-day re-run; cannot be reproduced from a fixture-only test suite.
 
-not_closed_reason: Same as entry 1 — no droplet access, no real `creatorpulse.db` with history to re-run against. The automated equivalent (`test_idempotent_rerun_same_day`, `tests/test_collector.py`) is green and proves the same claim in-process, but that is not this criterion.
+not_closed_reason: PARTIAL 2026-08-05T01:10Z. The same-day idempotency half is closed on real data. The prior-day half cannot be closed until a second calendar day of history exists — 2026-08-05 is the first day this database ever held rows, so there is no yesterday to leave untouched. Closes on its own when the 08:00 Asia/Manila timer fires 2026-08-06 (00:00 UTC), with no further action needed.
 
-Commands whose output belongs in the evidence block:
-- `sqlite3 <db> "select count(*) from metrics;"` (before)
-- `creatorpulse collect` (same-day re-run)
-- `sqlite3 <db> "select count(*) from metrics;"` (after — same count)
-- `sqlite3 <db> "select * from metrics where metric_date < date('now');"` (yesterday's rows, unchanged)
-
-result: pending
+result: passed_with_caveat
 
 evidence: |
+    Observed by the author on creatorpulse-vps, 2026-08-05.
+
+    HALF A — same-day re-run leaves the row count unchanged. CLOSED.
+
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "select count(*) from metrics;"
+    3
+    $ sudo systemctl start creatorpulse.service
+    $ sleep 2
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "select count(*) from metrics;"
+    3
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "select * from runs;"
+    1|2026-08-05T01:07:05.190751+00:00|2026-08-05T01:07:05.528278+00:00|3|0
+    2|2026-08-05T01:10:04.223945+00:00|2026-08-05T01:10:04.765536+00:00|3|0
+    3|2026-08-05T01:10:25.713183+00:00|2026-08-05T01:10:26.127195+00:00|3|0
+
+    Row count identical across three runs while runs grew by one each time. The upsert's
+    ON CONFLICT (creator_id, source, metric_date) target updates in place rather than
+    inserting. DATA-02 and OPS-05 satisfied on real data.
+
+    HALF B — prior days untouched. NOT CLOSED, and not closeable today.
+
+    This database was created 2026-08-05 and every row carries metric_date 2026-08-05.
+    There is no prior day, so "yesterday's rows are untouched" has nothing to assert
+    against. Recording this rather than glossing it, because a query returning zero rows
+    would look like evidence and would prove nothing.
+
+    The claim is covered automatically by
+    tests/test_db.py::test_upsert_different_date_does_not_touch_prior_row (green), which
+    writes two dates and asserts the earlier row is byte-identical after the later upsert.
+    The live proof arrives free on the next timer fire:
+
+        # run on or after 2026-08-06, no setup needed
+        sqlite3 -header -column /var/lib/creatorpulse/creatorpulse.db \
+          "select metric_date, count(*) from metrics group by metric_date order by 1;"
+        # expect two dates, and 2026-08-05's counts unchanged from today
 
 ### 3. A source made to fail is logged with creator, source, and cause, counted in that run's `runs` row, and the remaining creators still complete
 
@@ -56,19 +125,56 @@ expected: A fourth `creators.yaml` entry with a real `id`, a real platform key, 
 
 why_human: Requires deliberately breaking one entry in the real config and observing the real run's log and `runs` row — the D-18 bogus-identifier proof is a live-system behavior, not something a fixture-driven unit test can stand in for.
 
-not_closed_reason: Same droplet-access gap as entries 1 and 2. The automated proxy (`test_one_source_failure_does_not_abort_run` and siblings, `tests/test_collector.py`) proves exception isolation against a monkeypatched raise, which is explicitly a different, narrower proof than a real bogus handle meeting the real YouTube/Twitch API (D-18) — the two are deliberately not interchangeable.
+not_closed_reason: CLOSED 2026-08-05T01:17Z. A real bogus handle met the real YouTube API on the real droplet — the D-18 proof, not the monkeypatched proxy.
 
-Commands whose output belongs in the evidence block:
-- the bogus-identifier edit to `creators.yaml` (real `id`, real platform key, nonexistent identifier)
-- `creatorpulse collect` (exit code)
-- `journalctl -u creatorpulse.service -n 40` (or local run output) showing the failure line: creator, source, cause
-- `sqlite3 <db> "select * from runs order by started_at desc limit 1;"` (failure_count > 0)
-- `sqlite3 <db> "select * from metrics where metric_date = date('now');"` (other creators' rows present)
-- the revert of the bogus-identifier edit
-
-result: pending
+result: passed
 
 evidence: |
+    Observed by the author on creatorpulse-vps, 2026-08-05.
+
+    Appended a fifth entry with a real id, a real platform key, and an identifier that
+    does not exist:
+      - id: ghostchannel
+        name: Does Not Exist
+        sources:
+          youtube: "@thishandlewillneverexist0000"
+
+    $ sudo systemctl start creatorpulse.service && sleep 2
+    $ sudo journalctl -u creatorpulse.service -n 12 --no-pager
+
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  skip creator=xqc source=twitch reason=no_fetcher_registered
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  skip creator=xqc source=tiktok reason=no_fetcher_registered
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  skip creator=pokimane source=twitch reason=no_fetcher_registered
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  skip creator=pokimane source=tiktok reason=no_fetcher_registered
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  skip creator=kaicenat source=twitch reason=no_fetcher_registered
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  skip creator=kaicenat source=tiktok reason=no_fetcher_registered
+    Aug 05 01:17:40 creatorpulse[9794]: ERROR fetch failed creator=ghostchannel source=youtube
+        cause=ChannelNotFound: forHandle='@thishandlewillneverexist0000' matched zero channels
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  Run wrote 4 rows with 1 failures
+    Aug 05 01:17:40 creatorpulse[9794]: INFO  Run complete in 0.63 seconds
+
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "select * from runs order by id desc limit 1;"
+    7|2026-08-05T01:17:40.376131+00:00|2026-08-05T01:17:40.992324+00:00|4|1
+
+    All three halves of the criterion, on one run:
+      - logged with creator, source, AND cause
+      - counted: failure_count=1 in the runs row
+      - remaining creators still completed: 4 rows written, not 0
+
+    Two details worth keeping:
+
+    1. The cause is ChannelNotFound, a named error — not a KeyError. RESEARCH.md and D-18
+       both asserted a bogus handle returns HTTP 200 with an EMPTY items list. The fixture
+       recorded in 03-01 showed the items key is ABSENT entirely, so `data["items"]` would
+       have raised KeyError and produced a confusing 3am log line. The parser was written
+       as `data.get("items")` with an explicit raise because of that finding.
+
+    2. The six skip lines are NOT counted as failures — failure_count is 1, not 7. Twitch
+       and TikTok are known platforms with no registered fetcher (D-09's two-list split);
+       a skip is neither a row written nor a failure. Had the single-list design been
+       chosen, this run would have reported 7 failures and the signal would be worthless.
+
+    Reverted afterward with `git checkout creators.yaml`; tree confirmed clean.
 
 ### 4. A metric the platform does not expose reads as NULL in the database, never 0 — and the Twitch `followers` column is NULL on every row for exactly this reason
 
@@ -86,17 +192,35 @@ is *not* blocked and was run now, for real, on this machine — pasted below, un
 (BLOCKED-EXTERNAL, Twitch 2FA — see `.planning/REQUIREMENTS.md` §Sources) and has no
 Twitch rows to query regardless of droplet access, per the author's 2026-08-05 resolution
 recorded in `03-05-PLAN.md`'s "Entry 4, resolved by the author" note.
-Entry 4 stays `pending` as a whole because Part A — the entry's actual live-database claim —
-is unmet; Part B passing does not by itself satisfy "a human watched real API data land."
+UPDATE 2026-08-05T01:12Z: Part A is now CLOSED on real droplet data (pasted below). Part B was
+already closed. The Twitch instance remains open behind SRC-02 and is the only outstanding half.
 
-Commands whose output belongs in the evidence block:
-- Part A (still needed): `sqlite3 <db> "select creator_id, followers from metrics where source = 'twitch';"` (all NULL — but see the Twitch-instance note above, this table stays empty until 03-03 runs) and the two queries in `03-05-PLAN.md` Task 3 Entry 4 Part A
-- Part B (already run — see evidence below): `pytest tests/test_db.py::test_stored_null_and_zero_round_trip_distinct -v`
-
-result: pending
+result: passed_with_caveat
 
 evidence: |
-  Part B only — pytest tests/test_db.py::test_stored_null_and_zero_round_trip_distinct -v
+  Part A — real YouTube rows, observed by the author on creatorpulse-vps, 2026-08-05.
+
+  $ sqlite3 -header -column /var/lib/creatorpulse/creatorpulse.db \
+      "select creator_id, source, metric_date, followers, views, video_count, likes, is_live from metrics;"
+  creator_id  source   metric_date  followers  views       video_count  likes  is_live
+  ----------  -------  -----------  ---------  ----------  -----------  -----  -------
+  xqc         youtube  2026-08-05   2500000    1902674186  7250
+  pokimane    youtube  2026-08-05   6580000    95901586    116
+  kaicenat    youtube  2026-08-05   8120000    439490621   288
+
+  followers, views, and video_count carry real non-zero integers. likes and is_live are
+  empty — NULL — because the YouTube channels.list endpoint exposes neither. Both facts
+  in the same rows, which is the criterion's actual claim: a metric the platform does not
+  expose reads NULL, sitting beside metrics that carry real numbers.
+
+  All three rows share metric_date 2026-08-05, computed once per run in UTC (RUN-05).
+
+  Corroborating that this is live data rather than a cached response: pokimane's
+  video_count reads 116 here, and read 115 when the API key was verified earlier the same
+  day against the same endpoint. A video was published between the two calls.
+
+  Part B — the never-COALESCE rule at the storage layer.
+  pytest tests/test_db.py::test_stored_null_and_zero_round_trip_distinct -v
   ============================= test session starts =============================
   platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\loudi\orca\creator-pulse\.venv\Scripts\python.exe
   cachedir: .pytest_cache
@@ -108,8 +232,14 @@ evidence: |
 
   ============================== 1 passed in 0.06s ==============================
 
-  Part A (real YouTube evidence from a droplet run) and the Twitch instance are still open —
-  see not_closed_reason above.
+  STILL OPEN — the Twitch instance only. ROADMAP criterion 4 names "the Twitch followers
+  column is NULL on every row" as an instance of the principle. The principle is closed
+  above on YouTube evidence. The Twitch instance has no rows to query because SRC-02 is
+  BLOCKED-EXTERNAL (Twitch account 2FA — see .planning/REQUIREMENTS.md §Sources), and
+  closes when 03-03-PLAN.md executes. One query closes it then:
+
+      sqlite3 <db> "select creator_id, followers from metrics where source = 'twitch';"
+      # every followers cell must be empty, never 0
 
 ### 5. Every run appends a `runs` row with start, duration, rows written, and failure count, and the bot can read the database while the collector writes without a lock error
 
@@ -117,21 +247,84 @@ expected: The most recent `runs` row shows start time, finish/duration, rows wri
 
 why_human: Requires timing a concurrent read against a real in-progress collector run on the real database — not reproducible from an automated test suite that never touches a live run.
 
-not_closed_reason: Same droplet-access gap as entries 1-3. `test_reader_can_read_while_writer_has_open_transaction` (`tests/test_db.py`) proves the WAL/busy_timeout mechanism single-process; it cannot prove real cross-process concurrency, which is exactly what this entry requires and exactly what DATA-05's flagged assumption in `03-05-PLAN.md` names as unresolved.
+not_closed_reason: PARTIAL 2026-08-05T01:12Z. The runs-row half is closed outright on real data. The cross-process concurrency half is NOT claimed — the attempted overlap test is not conclusive evidence and is recorded as such rather than counted as a pass. DATA-05's flagged assumption in `03-05-PLAN.md` stands unresolved.
 
-Commands whose output belongs in the evidence block:
-- `sqlite3 <db> "select * from runs order by started_at desc limit 1;"`
-- `sqlite3 <db> 'select count(*) from metrics;'` (run from a second shell while the collector is mid-run)
-
-result: pending
+result: passed_with_caveat
 
 evidence: |
+    Observed by the author on creatorpulse-vps, 2026-08-05.
+
+    HALF A — every run appends a runs row with all four fields. CLOSED.
+
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "select * from runs;"
+    1|2026-08-05T01:07:05.190751+00:00|2026-08-05T01:07:05.528278+00:00|3|0
+    2|2026-08-05T01:10:04.223945+00:00|2026-08-05T01:10:04.765536+00:00|3|0
+    3|2026-08-05T01:10:25.713183+00:00|2026-08-05T01:10:26.127195+00:00|3|0
+    ...
+    7|2026-08-05T01:17:40.376131+00:00|2026-08-05T01:17:40.992324+00:00|4|1
+
+    Every column DATA-03 names: started_at, finished_at (duration derivable), rows_written,
+    failure_count. UTC ISO-8601. Row 7 is the deliberate-failure run from entry 3, showing
+    the failure count is real and not always zero.
+
+    HALF B — reader and writer concurrent, no lock error. NOT CLOSED. Read this carefully.
+
+    What was attempted:
+
+    $ sudo systemctl start creatorpulse.service & sleep 0.15; \
+        sqlite3 /var/lib/creatorpulse/creatorpulse.db "select count(*) from metrics;"; wait
+    [1] 9593
+    3
+
+    The read returned 3 with no "database is locked" error. That is CONSISTENT with the
+    claim but does not PROVE it: `systemctl start` has process-startup overhead before
+    Python opens the database at all, so at 150ms the read may have landed after the write
+    finished rather than during it. A passing result under a race that may not have raced
+    is not evidence. Not counted as a pass.
+
+    What IS verified — the mechanism rather than one timing sample:
+
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db "pragma journal_mode; pragma busy_timeout;"
+    wal
+    0
+
+    journal_mode=wal is persisted in the database file header, so WAL is genuinely active
+    for every connection. busy_timeout reads 0 here ONLY because it is a per-connection
+    setting that this ad-hoc sqlite3 CLI connection never set — it is stored nowhere. The
+    application sets both on every connection at src/creatorpulse/db.py:76-77, in both the
+    create=True and create=False branches, and
+    tests/test_db.py::test_connect_both_branches_set_wal_and_busy_timeout asserts
+    busy_timeout == 5000 on the writer and the reader connection. One pragma persisting and
+    the other not is the correct, expected asymmetry.
+
+    To close half B properly, hold a read open across a write from two real processes:
+
+        # shell 1 — hold a read transaction open
+        sqlite3 /var/lib/creatorpulse/creatorpulse.db \
+          "begin; select count(*) from metrics; select sleep(5);"
+        # shell 2, while shell 1 is still open
+        sudo systemctl start creatorpulse.service && echo "writer completed with reader open"
+
+    Deferred rather than faked. The bot in Phase 6 is the real second process, and this
+    entry closes naturally the first time it queries during a collector run.
 
 ## Summary
 
 total: 5
-passed: 0
-pending: 5
+passed: 2
+passed_with_caveat: 3
+pending: 0
+
+Closed outright: entries 1 and 3.
+Closed with a named, recorded caveat: entries 2, 4, and 5.
+
+The three caveats, none of which is a defect and none of which needs work today:
+
+| Entry | Closed | Outstanding | Closes when |
+|-------|--------|-------------|-------------|
+| 2 | same-day re-run leaves row count unchanged | prior-day rows untouched — no prior day exists yet | the 2026-08-06 timer fires; one query, no setup |
+| 4 | the NULL-vs-0 principle, on real YouTube rows | the Twitch `followers` instance — no Twitch rows exist | `03-03-PLAN.md` executes (SRC-02 unblocks) |
+| 5 | every run appends a `runs` row, all four fields | cross-process concurrent read — attempted, inconclusive, not claimed | the Phase 6 bot queries during a collector run |
 
 ## Gaps
 
