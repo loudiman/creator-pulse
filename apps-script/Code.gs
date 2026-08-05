@@ -21,7 +21,13 @@ const STALE_THRESHOLD_HOURS = 26;
 const WATCHDOG_HOUR = 9;
 const SCRIPT_TIMEZONE = 'Asia/Manila';
 
-// 05-02 appends DELTA_RANGE, POSITIVE_BACKGROUND, NEGATIVE_BACKGROUND beside these.
+// D-11: a fixed range rather than the current row count, so a creator added later — including
+// Twitch when SRC-02 unblocks (Phase 4 D-02) — inherits the formatting with no edit. Twitch
+// arrives as more rows and never more columns, so this range cannot go stale in the direction
+// that matters.
+const DELTA_RANGE = 'E2:E1000';
+const POSITIVE_BACKGROUND = '#d9ead3'; // light green
+const NEGATIVE_BACKGROUND = '#f4cccc'; // light red
 
 /**
  * Simple trigger — builds the menu. Needs no authorization, so it runs for anyone who opens
@@ -32,9 +38,9 @@ function onOpen(e) {
   SpreadsheetApp.getUi()
     .createMenu('CreatorPulse')
     .addItem('Check freshness now', 'checkFreshness')
+    .addItem('Re-apply formatting', 'applyFormatting')
     .addItem('Install triggers', 'installTriggers')
     .addToUi();
-  // Task 2 inserts 'Re-apply formatting' between the two items above, in D-09's stated order.
 }
 
 /**
@@ -235,6 +241,41 @@ function checkFreshness() {
     );
   }
   // Fresh: return without posting anything. Silence means fresh and nothing else.
+}
+
+/**
+ * Colors day-over-day movement on the Dashboard (D-10, D-11, SCRIPT-04). Keyed strictly on
+ * the sign of column E — nothing else. Called by the "Re-apply formatting" menu item; safe to
+ * call repeatedly because it builds a fresh two-rule array every time and passes it whole to
+ * the sheet's rule-setter below, which REPLACES the sheet's rule set rather than merging into
+ * it. Never read the existing rules first — that would double the rule count on every click,
+ * invisibly, since the first matching rule wins.
+ *
+ * Neither comparison is inclusive: a Δ Views of exactly 0 matches neither rule and stays
+ * unformatted, per D-11 ("zero movement is not movement"). The em-dash placeholder and any
+ * empty cell are non-numeric, so a number-comparison rule skips them by construction — no
+ * special case is written for that here, because Sheets already does the right thing.
+ */
+function applyFormatting() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(DASHBOARD_TAB);
+  const deltaRange = sheet.getRange(DELTA_RANGE);
+
+  const positiveRule = SpreadsheetApp.newConditionalFormatRule()
+    .whenNumberGreaterThan(0)
+    .setBackground(POSITIVE_BACKGROUND)
+    .setRanges([deltaRange])
+    .build();
+
+  const negativeRule = SpreadsheetApp.newConditionalFormatRule()
+    .whenNumberLessThan(0)
+    .setBackground(NEGATIVE_BACKGROUND)
+    .setRanges([deltaRange])
+    .build();
+
+  const rules = [positiveRule, negativeRule];
+  sheet.setConditionalFormatRules(rules);
+
+  sheet.toast(rules.length + ' conditional format rule(s) applied to ' + DELTA_RANGE + '.', 'CreatorPulse');
 }
 
 /**
