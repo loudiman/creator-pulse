@@ -229,7 +229,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | 2. VPS & systemd | human | 3 |
 | 3. Collector Core & API Sources | agent | 18 |
 | 4. Playwright & Sheets | agent | 6 |
-| 5. Apps Script | human | 4 |
+| 5. Apps Script | mixed | 4 |
 | 6. Discord Bot | mixed | 7 |
 | 7. Reliability & Docs | mixed | 2 |
 
