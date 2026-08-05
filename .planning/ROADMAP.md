@@ -296,7 +296,7 @@ Notes:
   4. A time-driven trigger fires on schedule and its execution is visible in the Apps Script execution log
   5. The author can walk someone through the `onEdit` trigger's event object and the webhook call from memory
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -309,7 +309,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 05-03-PLAN.md — `COVERAGE.md` for the Discord webhook surface, `05-UAT.md` carrying the observed evidence, the last stale ownership row in REQUIREMENTS.md, and criterion 5: the walkthrough, then the author's unaided write-up.
+- [x] 05-03-PLAN.md — `COVERAGE.md` for the Discord webhook surface, `05-UAT.md` carrying the observed evidence, the last stale ownership row in REQUIREMENTS.md, and criterion 5: the walkthrough, then the author's unaided write-up.
 
 Notes:
 
@@ -419,7 +419,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 2. VPS & systemd | 3/3 | Complete    | 2026-08-04 |
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
 | 4. Playwright & Sheets | 4/4 | Complete    | 2026-08-06 |
-| 5. Apps Script | 2/3 | In Progress|  |
+| 5. Apps Script | 3/3 | In Progress|  |
 | 6. Discord Bot | 0/TBD | Not started | - |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
 

@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 05
 current_phase_name: apps-script
-status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-08-05T22:07:21.675Z"
+status: verifying
+stopped_at: Completed 05-03-PLAN.md (Task 1 executed; Task 2 checkpoint deliberately deferred to author, 2 UAT items open)
+last_updated: "2026-08-05T22:16:13.827Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 
 Phase: 05 (apps-script) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-06 — Phase 05 execution started
 
-Progress: [█████████░] 89%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [█████████░] 89%
 | Phase 04 P03 | 50min | 3 tasks | 5 files |
 | Phase 05 P01 | 40min | 2 tasks | 5 files |
 | Phase 05 P02 | 55min | 3 tasks | 2 files |
+| Phase 05 P03 | 20min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 05-02: checkFreshness discards NaN at parse time (before comparison) so a single unparseable column-F cell cannot make the watchdog permanently silent
 - [Phase ?]: 05-02: applyFormatting toast() bug (Sheet has no toast method, only Spreadsheet does) found in orchestrator review before live paste; fixed by hoisting ss=SpreadsheetApp.getActive(), confirmed live via the fixed toast
 - [Phase ?]: 05-02: watchdog's three outcomes (stale, cannot-determine, silence) proven independently live; silence backed by a Completed Executions run closes D-07 as verified, not assumed
+- [Phase ?]: 05-03: Task 2 (author's live criterion-5 walkthrough/write-up) deliberately not attempted — author decided to proceed to Phase 6 ahead of the interview; recorded PENDING in 05-UAT.md per D-03, not fabricated
+- [Phase ?]: 05-03: COVERAGE.md ships 4 INTEGRATE / 27 OPT-OUT rows for the Discord webhook surface; REQUIREMENTS.md By-phase Phase 5 owner corrected human -> mixed
 
 ### Pending Todos
 
@@ -141,6 +144,7 @@ None yet.
 - **Hard deadline:** ship Wed 5 Aug 2026, interview Thu 6 Aug 8:00pm PHT. Roughly one phase per day, part-time. Cut order is fixed in ROADMAP.md — slash commands, then TikTok, then History tab. Never cut Phases 2, 5, or 6.
 - Phase 3 human-observed real-data run outstanding (ROADMAP Definition of Green) — needs droplet SSH access and real YOUTUBE_API_KEY/TWITCH_CLIENT_ID/SECRET; see 03-UAT.md Gaps
 - Phase 3 PARTIAL: 5/5 must-haves verified in code, all 4 green gates pass, but ROADMAP's human-observed real-data run is outstanding. 03-UAT.md holds 5 PENDING entries with close-later commands. Needs droplet /etc/creatorpulse/creatorpulse.env filled (YOUTUBE_API_KEY available now; Twitch blocked on 2FA).
+- Phase 5 PARTIAL: 05-UAT.md entry 7 (ROADMAP criterion 5, author's unaided onEdit/webhook explanation) PENDING by author decision at ~06:00 Asia/Manila 2026-08-06 to proceed to Phase 6; interview is 20:00 same day. Close-later step in 05-UAT.md. Also PENDING (non-gating): criterion 4's natural 09:00 Manila trigger fire, bonus evidence only.
 
 ## Deferred Items
 
@@ -152,6 +156,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-05T22:07:21.620Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-08-05T22:16:01.063Z
+Stopped at: Completed 05-03-PLAN.md (Task 1 executed; Task 2 checkpoint deliberately deferred to author, 2 UAT items open)
 Resume file: None
