@@ -132,3 +132,81 @@ def test_null_followers_renders_blank_and_zero_renders_zero(tmp_path: Path) -> N
 
     assert by_creator["null-case"][2] == ""
     assert by_creator["zero-case"][2] == 0
+
+
+# --- 04-02 Task 1: the baseline row arrives in the same read ---------------------------
+
+
+def test_baseline_present_returns_previous_day_views(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=4200))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    rows = fetch_latest_rows(conn)
+
+    assert len(rows) == 1
+    assert rows[0][0] == "c1"
+    assert rows[0][5] == 4200
+
+
+def test_baseline_absent_single_row_returns_one_tuple_with_none(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    rows = fetch_latest_rows(conn)
+
+    assert len(rows) == 1
+    assert rows[0][0] == "c1"
+    assert rows[0][5] is None
+
+
+def test_baseline_gap_two_days_back_returns_none_not_the_gap_row(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 3), views=1000))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    rows = fetch_latest_rows(conn)
+
+    assert len(rows) == 1
+    assert rows[0][5] is None
+    assert rows[0][5] != 1000
+
+
+def test_baseline_resolves_across_month_boundary(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 2, 28), views=100))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 3, 1), views=150))
+
+    rows = fetch_latest_rows(conn)
+
+    assert rows[0][5] == 100
+
+
+def test_baseline_resolves_across_leap_day(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2028, 2, 29), views=100))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2028, 3, 1), views=150))
+
+    rows = fetch_latest_rows(conn)
+
+    assert rows[0][5] == 100
+
+
+def test_baseline_row_with_null_views_returns_none(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=None))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    rows = fetch_latest_rows(conn)
+
+    assert rows[0][5] is None
+
+
+def test_baseline_row_with_zero_views_returns_zero_not_none(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 4), views=0))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=5000))
+
+    rows = fetch_latest_rows(conn)
+
+    assert rows[0][5] == 0
