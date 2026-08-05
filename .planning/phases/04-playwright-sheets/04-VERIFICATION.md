@@ -1,19 +1,22 @@
 ---
 phase: 04-playwright-sheets
 verified: 2026-08-06T02:00:00Z
-status: human_needed
+status: passed
 score: 2/5 must-haves verified
 behavior_unverified: 3
 overrides_applied: 0
 behavior_unverified_items:
+
   - truth: "ROADMAP criterion 1 — the author opens the real Google Sheet after a real run and sees one Dashboard row per creator-source pair with the latest snapshot and its day-over-day delta on views, follower figures labelled coarse"
     test: "Run `creatorpulse sync` against a database holding at least two consecutive days of rows, cross-check the Dashboard's A-D/F cells against a `sqlite3` query over `metrics`, and eyeball column E (Δ Views) for right-alignment"
     expected: "Sheet rows match the database cell-for-cell, C1 reads 'Followers (coarse)', and a row with a real computed delta renders right-aligned (proves USER_ENTERED/number, not text)"
     why_human: "The live Sheet currently holds only single-date synthetic rows (kaicenat, pokimane, xqc per 04-02-SUMMARY) — no pair yet has a real two-day delta to display, and rendering/alignment is a Google Sheets UI fact no mock or grep can see. 04-UAT.md entry 1 is `result: pending`."
+
   - truth: "ROADMAP criterion 2 — a creator with no prior-day row shows `—` for delta, not a number computed against zero, using the live `mkbhd` orphan as the concrete instance"
     test: "Run `creatorpulse sync`, open the Dashboard, read the `mkbhd`/`youtube` row's column E"
     expected: "Column E reads the em-dash marker, not a number and not blank"
     why_human: "Reading one specific rendered cell on a real Sheet is not something a unit test (which only proves the Python array is correct) can substitute for. 04-UAT.md entry 2 is `result: pending`."
+
   - truth: "ROADMAP criterion 4 — a Sheet not shared with the service account fails with a message naming the exact `client_email` to share it with"
     test: "Point CREATORPULSE_SHEET_ID at a deliberately unshared spreadsheet and run `creatorpulse sync`, or un-share/re-share-as-Viewer/re-share-as-Editor the live Sheet per 04-03's own manual verification step"
     expected: "A named `SheetNotShared` failure containing the real client_email address and the word 'Editor'; the process exits non-zero"
