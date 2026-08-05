@@ -46,6 +46,18 @@ def resolve_paths() -> tuple[Path, Path]:
     return config_path.resolve(), db_path.resolve()
 
 
+def resolve_sheets_config() -> tuple[str, Path] | None:
+    """Resolve the two Sheets env vars (D-09). No default exists for either — unlike
+    resolve_paths()'s repo-relative fallback, a missing spreadsheet key has no sensible guess.
+    Returns None when either is absent or the empty string, so the caller can fail loudly
+    before opening anything."""
+    sheet_id_env: str | None = os.environ.get("CREATORPULSE_SHEET_ID")
+    keyfile_env: str | None = os.environ.get("CREATORPULSE_SHEETS_KEYFILE")
+    if not sheet_id_env or not keyfile_env:
+        return None
+    return sheet_id_env, Path(keyfile_env).resolve()
+
+
 def load_raw(path: Path) -> dict[str, Any]:
     """Read creators.yaml as UTF-8 and parse it into a dict. Nothing is checked yet."""
     text = path.read_text(encoding="utf-8")

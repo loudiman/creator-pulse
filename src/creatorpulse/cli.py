@@ -6,8 +6,16 @@ import sys
 import time
 from pathlib import Path
 
+from creatorpulse import sheets
 from creatorpulse.collector import collect_once
-from creatorpulse.config import ValidationError, load_creators, load_raw, resolve_paths, validate
+from creatorpulse.config import (
+    ValidationError,
+    load_creators,
+    load_raw,
+    resolve_paths,
+    resolve_sheets_config,
+    validate,
+)
 from creatorpulse.db import connect
 
 logger = logging.getLogger("creatorpulse")
@@ -65,6 +73,36 @@ def run_collect(config_path: Path, db_path: Path) -> int:
     return 0
 
 
+def run_sync(db_path: Path) -> int:
+    """Write the Dashboard tab from the database's current metrics.
+
+    Exit codes:
+      0  the sync completed and the Dashboard was written.
+      1  the sheets configuration (CREATORPULSE_SHEET_ID / CREATORPULSE_SHEETS_KEYFILE) is
+         absent, so the sync could not start — nothing was opened, nothing was written.
+      *  an exception propagated (e.g. DatabaseNotInitialized, a gspread failure); a non-zero
+         exit is what marks the unit failed and puts a traceback in the journal.
+    """
+    start = time.monotonic()
+    resolved = resolve_sheets_config()
+    if resolved is None:
+        logger.error(
+            "Sheets configuration missing: set CREATORPULSE_SHEET_ID and "
+            "CREATORPULSE_SHEETS_KEYFILE in /etc/creatorpulse/creatorpulse.env"
+        )
+        return 1
+    sheet_id, keyfile = resolved
+
+    logger.info("Starting sync using database %s, sheet %s, keyfile %s", db_path, sheet_id, keyfile)
+    conn = connect(db_path, create=False)
+    row_count = sheets.sync(conn, sheet_id, keyfile)
+    conn.close()
+    logger.info("Sync wrote %d data rows", row_count)
+    elapsed = time.monotonic() - start
+    logger.info("Run complete in %.2f seconds", elapsed)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="creatorpulse")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -85,8 +123,8 @@ def main(argv: list[str] | None = None) -> int:
             config_path = args.config.resolve()
         return run_collect(config_path, db_path)
     if args.command == "sync":
-        logger.warning("sync is not implemented yet; Phase 4 fills it in")
-        return 3
+        _, db_path = resolve_paths()
+        return run_sync(db_path)
     if args.command == "bot":
         logger.warning("bot is not implemented yet; Phase 6 fills it in")
         return 3
