@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: discord-bot
 status: executing
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-08-06T08:52:16.678Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-08-06T09:08:28.764Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 06 (discord-bot) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 06 execution started
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Progress: [████████░░] 83%
 | Phase 05 P03 | 20min | 1 tasks | 3 files |
 | Phase 06 P01 | 17min | 2 tasks | 7 files |
 | Phase 06 P02 | 8min | 2 tasks | 7 files |
+| Phase 06 P03 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -138,6 +139,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 06-01: tzdata installed into .venv only (not pyproject.toml) to unblock zoneinfo Asia/Manila on Windows dev machine lacking system tz database; VPS is Linux with system tzdata, zero production impact
 - [Phase ?]: cli.py owns build_alert_text/_post_alert (not bot.py) so the collector never imports discord.py
 - [Phase ?]: D-08/D-09 alert-path tests mock sheets.sync as a no-op to keep the two call sites independently testable
+- [Phase ?]: MOVER_FLAG prefix is a fixed 2-char lead-in on every mover row (emoji+space or two blank spaces) so Discord's proportional font can't visually stagger the creator/source column
+- [Phase ?]: Failures section omitted entirely (no header) when there is no runs row — the could-not-determine banner already covers it, an empty header would misleadingly imply a run happened
+- [Phase ?]: round(hours) for the staleness banner age, matching Code.gs's Math.round(ageHours) exactly so both surfaces report the same integer hour count
 
 ### Pending Todos
 
@@ -226,6 +230,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T08:52:16.645Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-08-06T09:08:28.733Z
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None
