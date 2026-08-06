@@ -25,7 +25,13 @@ from creatorpulse.bot import (
 )
 from creatorpulse.cli import _post_alert, build_alert_text, run_collect
 from creatorpulse.config import DiscordConfigError, resolve_discord_config
-from creatorpulse.db import DELTA_PLACEHOLDER, connect, upsert_metric, write_run_row
+from creatorpulse.db import (
+    DELTA_PLACEHOLDER,
+    connect,
+    upsert_metric,
+    write_run_failures,
+    write_run_row,
+)
 from creatorpulse.models import MetricRecord, RunFailure
 from creatorpulse.sheets import SheetNotShared
 
@@ -340,6 +346,73 @@ def test_staleness_one_minute_past_26_hours_emits_stale_banner_naming_timestamp_
 
     assert "STALE" in text
     assert finished.isoformat() in text
+
+
+# --- digest failures section (BOT-01, D-06) -------------------------------------------------
+
+
+def test_digest_text_two_failures_names_both_creators_sources_and_causes(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    run_id = write_run_row(conn, now, now, 0, 2)
+    write_run_failures(
+        conn,
+        run_id,
+        [
+            RunFailure(creator_id="c1", source="youtube", cause="ValueError", message="boom"),
+            RunFailure(creator_id="c2", source="youtube", cause="KeyError", message="missing"),
+        ],
+    )
+
+    text = build_digest_text(conn, now)
+
+    assert "c1" in text and "c2" in text
+    assert "ValueError" in text and "boom" in text
+    assert "KeyError" in text and "missing" in text
+    assert "Failures this run: 2" in text
+
+
+def test_digest_text_clean_run_ends_with_explicit_no_failures_line(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 0, 0)
+
+    text = build_digest_text(conn, now)
+
+    assert "Failures this run: none" in text
+
+
+def test_digest_text_names_only_the_newer_runs_failures_never_an_older_runs(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    older_run = write_run_row(conn, now, now, 0, 1)
+    write_run_failures(
+        conn,
+        older_run,
+        [RunFailure(creator_id="stale-fail", source="youtube", cause="X", message="old")],
+    )
+    newer_run = write_run_row(conn, now, now, 0, 1)
+    write_run_failures(
+        conn,
+        newer_run,
+        [RunFailure(creator_id="fresh-fail", source="youtube", cause="Y", message="new")],
+    )
+
+    text = build_digest_text(conn, now)
+
+    assert "fresh-fail" in text
+    assert "stale-fail" not in text
+
+
+def test_digest_text_with_no_runs_row_has_no_failures_section(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    text = build_digest_text(conn, datetime(2026, 8, 5, 8, 15, tzinfo=UTC))
+
+    assert "Failures this run" not in text
+    assert "could not determine" in text.lower()
 
 
 def test_digest_text_on_empty_database_returns_an_explicit_message_not_an_empty_string(

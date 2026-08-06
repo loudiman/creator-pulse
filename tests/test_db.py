@@ -16,6 +16,7 @@ from creatorpulse.db import (
     DatabaseNotInitialized,
     connect,
     fetch_last_run,
+    fetch_run_failures,
     upsert_metric,
     write_run_failures,
     write_run_row,
@@ -269,3 +270,33 @@ def test_write_run_failures_round_trip_matches_run_id(tmp_path: Path) -> None:
     assert row["source"] == "youtube"
     assert row["cause"] == "ValueError"
     assert row["message"] == "boom"
+
+
+def test_fetch_run_failures_returns_only_rows_for_that_run_id(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 1, 1, tzinfo=UTC)
+    older_run = write_run_row(conn, started, started, 0, 1)
+    newer_run = write_run_row(conn, started, started, 0, 1)
+    write_run_failures(
+        conn,
+        older_run,
+        [RunFailure(creator_id="a", source="youtube", cause="X", message="old")],
+    )
+    write_run_failures(
+        conn,
+        newer_run,
+        [RunFailure(creator_id="b", source="youtube", cause="Y", message="new")],
+    )
+
+    failures = fetch_run_failures(conn, newer_run)
+
+    assert len(failures) == 1
+    assert failures[0] == ("b", "youtube", "Y", "new")
+
+
+def test_fetch_run_failures_on_run_with_no_failures_returns_empty_list(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 1, 1, tzinfo=UTC)
+    run_id = write_run_row(conn, started, started, 0, 0)
+
+    assert fetch_run_failures(conn, run_id) == []

@@ -72,11 +72,12 @@ def build_digest_text(conn: sqlite3.Connection, now: datetime) -> str:
     lines = [header]
 
     last_run = db.fetch_last_run(conn)
+    run_id: int | None = None
     if last_run is None:
         # No runs row at all — never a fabricated OK (PITFALLS.md §18(d)).
         lines.append("⚠ could not determine freshness — no runs recorded yet")
     else:
-        _run_id, _started_at, finished_at, _rows_written, _failure_count = last_run
+        run_id, _started_at, finished_at, _rows_written, _failure_count = last_run
         hours = staleness_hours(finished_at, now)
         # Strictly greater-than, matching Code.gs's checkFreshness: exactly STALE_AFTER_HOURS
         # reads fresh, so the two surfaces can never disagree about the same moment (D-17).
@@ -112,6 +113,20 @@ def build_digest_text(conn: sqlite3.Connection, now: datetime) -> str:
                 flagged = abs(pct) > FLAG_THRESHOLD
             prefix = f"{MOVER_FLAG} " if flagged else _UNFLAGGED_PREFIX
             lines.append(f"{prefix}{creator_id} / {source} — {views_text} views (Δ {delta_text})")
+
+    if run_id is not None:
+        # No runs row at all means no run whose failures could be listed — the
+        # could-not-determine banner above already carries that fact, so the section is
+        # omitted entirely rather than rendered empty (D-06).
+        failures = db.fetch_run_failures(conn, run_id)
+        if failures:
+            lines.append(f"Failures this run: {len(failures)}")
+            for creator_id, source, cause, message in failures:
+                lines.append(f"   {creator_id} / {source} — {cause}: {message}")
+        else:
+            # An absent section would be indistinguishable from a section that failed to
+            # render — a clean run says so explicitly.
+            lines.append("Failures this run: none")
 
     return "\n".join(lines)
 

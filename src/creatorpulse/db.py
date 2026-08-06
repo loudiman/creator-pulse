@@ -128,6 +128,24 @@ def fetch_last_run(conn: sqlite3.Connection) -> LastRun | None:
     return row
 
 
+# run_id is a bound parameter (the trailing ?), never interpolated — this is the query shape
+# 06-05's user-supplied /creator lookup copies, so the discipline is established here on a
+# trusted integer before it is applied to untrusted input (T-06-01).
+RUN_FAILURES_SQL = """
+SELECT creator_id, source, cause, message
+FROM run_failures
+WHERE run_id = ?
+ORDER BY creator_id, source;
+"""
+
+
+def fetch_run_failures(conn: sqlite3.Connection, run_id: int) -> list[tuple[str, str, str, str]]:
+    """Every failure row recorded for one run — never another run's, because run_id is bound."""
+    cursor = conn.execute(RUN_FAILURES_SQL, (run_id,))
+    rows: list[tuple[str, str, str, str]] = cursor.fetchall()
+    return rows
+
+
 class DatabaseNotInitialized(Exception):
     """Raised by connect(create=False) when the file or its metrics table is absent (D-04)."""
 
