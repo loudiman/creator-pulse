@@ -108,6 +108,26 @@ def fetch_latest_rows(conn: sqlite3.Connection) -> list[LatestRow]:
     return rows
 
 
+# The newest runs row, or none at all — what the digest banner (D-04) and, once 06-05 lands,
+# /status (D-17) both need to answer "can these numbers be trusted". ORDER BY id, not
+# finished_at: id is the AUTOINCREMENT insertion order and needs no string-timestamp compare.
+LAST_RUN_SQL = """
+SELECT id, started_at, finished_at, rows_written, failure_count
+FROM runs
+ORDER BY id DESC
+LIMIT 1;
+"""
+
+LastRun = tuple[int, str, str, int, int]
+
+
+def fetch_last_run(conn: sqlite3.Connection) -> LastRun | None:
+    """The newest runs row, or None when no run has ever completed (an empty runs table)."""
+    cursor = conn.execute(LAST_RUN_SQL)
+    row: LastRun | None = cursor.fetchone()
+    return row
+
+
 class DatabaseNotInitialized(Exception):
     """Raised by connect(create=False) when the file or its metrics table is absent (D-04)."""
 

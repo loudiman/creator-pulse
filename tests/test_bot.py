@@ -6,6 +6,7 @@ and sheets.sync; the gateway, the task loop, and command registration are untest
 (D-20) and that gap is recorded in 06-VALIDATION.md rather than papered over.
 """
 
+import sqlite3
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -15,10 +16,16 @@ import pytest
 import requests
 
 from creatorpulse import collector
-from creatorpulse.bot import build_digest_text, format_percent, percent_change
+from creatorpulse.bot import (
+    MOVER_FLAG,
+    build_digest_text,
+    format_percent,
+    percent_change,
+    staleness_hours,
+)
 from creatorpulse.cli import _post_alert, build_alert_text, run_collect
 from creatorpulse.config import DiscordConfigError, resolve_discord_config
-from creatorpulse.db import DELTA_PLACEHOLDER, connect, upsert_metric
+from creatorpulse.db import DELTA_PLACEHOLDER, connect, upsert_metric, write_run_row
 from creatorpulse.models import MetricRecord, RunFailure
 from creatorpulse.sheets import SheetNotShared
 
@@ -144,8 +151,24 @@ def test_format_percent_renders_one_decimal_place_with_an_explicit_sign() -> Non
 # --- build_digest_text() -----------------------------------------------------------------
 
 
+def _drop_flag_prefix(line: str) -> str:
+    """Every mover row carries a fixed 2-char lead-in — MOVER_FLAG+space when flagged, two
+    blank spaces otherwise (bot.py's column-alignment rule). Strip it before reading the
+    creator_id back out of a row in a test."""
+    return line[2:]
+
+
+def _line_for(text: str, creator_id: str) -> str:
+    for line in text.splitlines():
+        if f"{creator_id} /" in line:
+            return line
+    raise AssertionError(f"no digest line found for creator_id={creator_id!r}: {text!r}")
+
+
 def test_digest_text_orders_rows_by_absolute_percent_change_descending(tmp_path: Path) -> None:
     conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 3, 0)  # fresh run — no staleness banner to skip over
     # +10%
     upsert_metric(conn, _record(creator_id="small", metric_date=date(2026, 8, 4), views=1000))
     upsert_metric(conn, _record(creator_id="small", metric_date=date(2026, 8, 5), views=1100))
@@ -156,16 +179,18 @@ def test_digest_text_orders_rows_by_absolute_percent_change_descending(tmp_path:
     upsert_metric(conn, _record(creator_id="neg", metric_date=date(2026, 8, 4), views=1000))
     upsert_metric(conn, _record(creator_id="neg", metric_date=date(2026, 8, 5), views=700))
 
-    text = build_digest_text(conn, datetime(2026, 8, 5, 8, 15, tzinfo=UTC))
-    lines = text.splitlines()[1:]
+    text = build_digest_text(conn, now)
+    lines = text.splitlines()[1:4]  # header, then exactly the 3 mover rows
 
-    assert [line.split(" / ")[0] for line in lines] == ["big", "neg", "small"]
+    assert [_drop_flag_prefix(line).split(" / ")[0] for line in lines] == ["big", "neg", "small"]
 
 
 def test_digest_text_places_row_with_no_computable_percent_after_every_row_that_has_one(
     tmp_path: Path,
 ) -> None:
     conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 2, 0)
     upsert_metric(
         conn, _record(creator_id="has-baseline", metric_date=date(2026, 8, 4), views=1000)
     )
@@ -174,28 +199,147 @@ def test_digest_text_places_row_with_no_computable_percent_after_every_row_that_
     )
     upsert_metric(conn, _record(creator_id="no-baseline", metric_date=date(2026, 8, 5), views=500))
 
-    text = build_digest_text(conn, datetime(2026, 8, 5, 8, 15, tzinfo=UTC))
-    lines = text.splitlines()[1:]
+    text = build_digest_text(conn, now)
+    lines = text.splitlines()[1:3]
 
-    assert lines[0].startswith("has-baseline")
-    assert lines[1].startswith("no-baseline")
+    assert _drop_flag_prefix(lines[0]).startswith("has-baseline")
+    assert _drop_flag_prefix(lines[1]).startswith("no-baseline")
 
 
 def test_digest_text_renders_delta_placeholder_for_missing_and_zero_baseline(
     tmp_path: Path,
 ) -> None:
     conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 2, 0)
     upsert_metric(conn, _record(creator_id="no-baseline", metric_date=date(2026, 8, 5), views=500))
     upsert_metric(conn, _record(creator_id="zero-baseline", metric_date=date(2026, 8, 4), views=0))
     upsert_metric(
         conn, _record(creator_id="zero-baseline", metric_date=date(2026, 8, 5), views=700)
     )
 
-    text = build_digest_text(conn, datetime(2026, 8, 5, 8, 15, tzinfo=UTC))
-    by_creator = {line.split(" ", 1)[0]: line for line in text.splitlines()[1:]}
+    text = build_digest_text(conn, now)
+    by_creator = {_drop_flag_prefix(line).split(" ", 1)[0]: line for line in text.splitlines()[1:3]}
 
     assert f"(Δ {DELTA_PLACEHOLDER})" in by_creator["no-baseline"]
     assert f"(Δ {DELTA_PLACEHOLDER})" in by_creator["zero-baseline"]
+    # No baseline, or a zero baseline, is never flagged — a missing comparison is not a move
+    # and a division by zero is not a gain (D-12).
+    assert MOVER_FLAG not in by_creator["no-baseline"]
+    assert MOVER_FLAG not in by_creator["zero-baseline"]
+
+
+def test_digest_text_on_no_runs_row_but_metrics_present_shows_could_not_determine_banner(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 8, 5), views=500))
+
+    text = build_digest_text(conn, datetime(2026, 8, 5, 8, 15, tzinfo=UTC))
+    lines = text.splitlines()
+
+    assert "could not determine" in lines[1].lower()
+    assert any("c1" in line for line in lines[2:])
+
+
+# --- ±20% flag boundary (BOT-02, D-10) ----------------------------------------------------
+
+
+def _seed_pair(conn: sqlite3.Connection, creator_id: str, prev_views: int, views: int) -> None:
+    upsert_metric(
+        conn, _record(creator_id=creator_id, metric_date=date(2026, 8, 4), views=prev_views)
+    )
+    upsert_metric(conn, _record(creator_id=creator_id, metric_date=date(2026, 8, 5), views=views))
+
+
+def test_digest_flag_pair_at_exactly_positive_threshold_is_not_flagged(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 1, 0)
+    _seed_pair(conn, "at-threshold", 1000, 1200)  # exactly +20%
+
+    text = build_digest_text(conn, now)
+
+    assert MOVER_FLAG not in _line_for(text, "at-threshold")
+
+
+def test_digest_flag_pair_one_step_over_positive_threshold_is_flagged(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 1, 0)
+    _seed_pair(conn, "over-threshold", 1000, 1201)  # +20.1%
+
+    text = build_digest_text(conn, now)
+
+    assert MOVER_FLAG in _line_for(text, "over-threshold")
+
+
+def test_digest_flag_pair_at_exactly_negative_threshold_is_not_flagged(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 1, 0)
+    _seed_pair(conn, "at-negative-threshold", 1000, 800)  # exactly -20%
+
+    text = build_digest_text(conn, now)
+
+    assert MOVER_FLAG not in _line_for(text, "at-negative-threshold")
+
+
+def test_digest_flag_pair_one_step_over_negative_threshold_is_flagged(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 1, 0)
+    _seed_pair(conn, "over-negative-threshold", 1000, 799)  # -20.1%
+
+    text = build_digest_text(conn, now)
+
+    assert MOVER_FLAG in _line_for(text, "over-negative-threshold")
+
+
+def test_digest_flag_reads_the_unrounded_float_not_the_rounded_display_text(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 1, 0)
+    _seed_pair(conn, "rounds-but-flags", 10000, 12004)  # +20.04% -> displays +20.0%
+
+    text = build_digest_text(conn, now)
+    line = _line_for(text, "rounds-but-flags")
+
+    assert "+20.0%" in line
+    assert MOVER_FLAG in line
+
+
+# --- staleness banner (D-04, D-17) ---------------------------------------------------------
+
+
+def test_staleness_hours_at_exactly_26_reads_fresh_and_digest_has_no_stale_banner(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    finished = datetime(2026, 8, 4, 6, 15, tzinfo=UTC)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)  # exactly 26 hours later
+    write_run_row(conn, finished, finished, 0, 0)
+
+    assert staleness_hours(finished.isoformat(), now) == 26.0
+
+    text = build_digest_text(conn, now)
+    assert "STALE" not in text
+
+
+def test_staleness_one_minute_past_26_hours_emits_stale_banner_naming_timestamp_and_age(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    finished = datetime(2026, 8, 4, 6, 14, tzinfo=UTC)
+    now = datetime(2026, 8, 5, 8, 15, tzinfo=UTC)  # 26h 1min later
+    write_run_row(conn, finished, finished, 0, 0)
+
+    text = build_digest_text(conn, now)
+
+    assert "STALE" in text
+    assert finished.isoformat() in text
 
 
 def test_digest_text_on_empty_database_returns_an_explicit_message_not_an_empty_string(

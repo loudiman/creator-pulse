@@ -27,6 +27,17 @@ DIGEST_TIME = time(hour=8, minute=15, tzinfo=MANILA)
 # the later /status command cannot disagree about what "stale" means.
 STALE_AFTER_HOURS = 26
 
+# REQUIREMENTS.md's BOT-02 says a delta that *exceeds* +-20% is flagged: a strict greater-than
+# on the absolute value, so a pair sitting exactly on the threshold is not flagged. This reads
+# percent_change's unrounded float, never format_percent's rounded string — a row displayed as
+# +20.0% that is really +20.04% still carries the flag.
+FLAG_THRESHOLD = 0.20
+# The visible marker on a flagged row. Unflagged rows get an equal-width blank prefix instead
+# of nothing, so the creator/source column stays aligned down the message in Discord's
+# proportional font.
+MOVER_FLAG = "🚨"
+_UNFLAGGED_PREFIX = "  "
+
 
 def percent_change(views: int | None, prev_views: int | None) -> float | None:
     """(views - prev_views) / prev_views. None when either side is None or prev_views is 0 —
@@ -43,38 +54,65 @@ def format_percent(pct: float) -> str:
     return f"{pct * 100:+.1f}%"
 
 
+def staleness_hours(finished_at: str, now: datetime) -> float:
+    """Hours between a stored runs.finished_at and now. finished_at is a tz-aware UTC isoformat
+    string written by collector.collect_once, so datetime.fromisoformat carries its offset and
+    the subtraction needs no separate timezone handling."""
+    finished = datetime.fromisoformat(finished_at)
+    return (now - finished).total_seconds() / 3600
+
+
 def build_digest_text(conn: sqlite3.Connection, now: datetime) -> str:
-    """Every (creator, source) pair's latest snapshot, sorted by |percent change| descending,
-    with pairs that have no computable percent sorted last (D-11/D-12). Pure and
-    fixture-testable — it reaches only into db.py, so nothing in the digest path imports the
-    gateway or the Google client."""
+    """The staleness banner (D-04), every (creator, source) pair's latest snapshot sorted by
+    |percent change| descending with pairs that have no computable percent sorted last
+    (D-11/D-12) and flagged when that percent exceeds +-FLAG_THRESHOLD (D-10/BOT-02), and that
+    run's failures (D-06). Pure and fixture-testable — it reaches only into db.py, so nothing
+    in the digest path imports the gateway or the Google client."""
     header = f"CreatorPulse digest — {now.date().isoformat()}"
+    lines = [header]
+
+    last_run = db.fetch_last_run(conn)
+    if last_run is None:
+        # No runs row at all — never a fabricated OK (PITFALLS.md §18(d)).
+        lines.append("⚠ could not determine freshness — no runs recorded yet")
+    else:
+        _run_id, _started_at, finished_at, _rows_written, _failure_count = last_run
+        hours = staleness_hours(finished_at, now)
+        # Strictly greater-than, matching Code.gs's checkFreshness: exactly STALE_AFTER_HOURS
+        # reads fresh, so the two surfaces can never disagree about the same moment (D-17).
+        if hours > STALE_AFTER_HOURS:
+            lines.append(f"⚠ last run finished {finished_at} — STALE ({round(hours)}h ago)")
+
     rows = db.fetch_latest_rows(conn)
     if not rows:
-        return f"{header}\nNo rows recorded yet."
+        lines.append("No rows recorded yet.")
+    else:
+        computed = [
+            (creator_id, source, views, prev_views, percent_change(views, prev_views))
+            for creator_id, source, _followers, views, _collected_at, prev_views in rows
+        ]
 
-    computed = [
-        (creator_id, source, views, prev_views, percent_change(views, prev_views))
-        for creator_id, source, _followers, views, _collected_at, prev_views in rows
-    ]
+        def _sort_key(
+            item: tuple[str, str, int | None, int | None, float | None],
+        ) -> tuple[bool, float, str, str]:
+            creator_id, source, _views, _prev_views, pct = item
+            has_pct = pct is not None
+            return (not has_pct, -abs(pct) if pct is not None else 0.0, creator_id, source)
 
-    def _sort_key(
-        item: tuple[str, str, int | None, int | None, float | None],
-    ) -> tuple[bool, float, str, str]:
-        creator_id, source, _views, _prev_views, pct = item
-        has_pct = pct is not None
-        return (not has_pct, -abs(pct) if pct is not None else 0.0, creator_id, source)
+        for creator_id, source, views, prev_views, pct in sorted(computed, key=_sort_key):
+            views_text = f"{views:,}" if views is not None else db.DELTA_PLACEHOLDER
+            if pct is None:
+                # No baseline, or a zero baseline, is never flagged (D-12).
+                delta_text = db.DELTA_PLACEHOLDER
+                flagged = False
+            else:
+                # pct is not None only when both sides are ints and prev_views != 0.
+                assert views is not None and prev_views is not None
+                delta_text = f"{views - prev_views:+,}, {format_percent(pct)}"
+                flagged = abs(pct) > FLAG_THRESHOLD
+            prefix = f"{MOVER_FLAG} " if flagged else _UNFLAGGED_PREFIX
+            lines.append(f"{prefix}{creator_id} / {source} — {views_text} views (Δ {delta_text})")
 
-    lines = [header]
-    for creator_id, source, views, prev_views, pct in sorted(computed, key=_sort_key):
-        views_text = f"{views:,}" if views is not None else db.DELTA_PLACEHOLDER
-        if pct is None:
-            delta_text = db.DELTA_PLACEHOLDER
-        else:
-            # pct is not None only when both sides are ints and prev_views != 0.
-            assert views is not None and prev_views is not None
-            delta_text = f"{views - prev_views:+,}, {format_percent(pct)}"
-        lines.append(f"{creator_id} / {source} — {views_text} views (Δ {delta_text})")
     return "\n".join(lines)
 
 

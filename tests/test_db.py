@@ -15,6 +15,7 @@ import pytest
 from creatorpulse.db import (
     DatabaseNotInitialized,
     connect,
+    fetch_last_run,
     upsert_metric,
     write_run_failures,
     write_run_row,
@@ -229,6 +230,27 @@ def test_write_run_failures_empty_sequence_writes_nothing_and_does_not_raise(
 
     count = conn.execute("SELECT COUNT(*) FROM run_failures").fetchone()[0]
     assert count == 0
+
+
+def test_fetch_last_run_on_empty_runs_table_returns_none(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    assert fetch_last_run(conn) is None
+
+
+def test_fetch_last_run_after_three_runs_returns_the_newest_one(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 1, 1, tzinfo=UTC)
+    write_run_row(conn, started, datetime(2026, 1, 1, 0, 1, tzinfo=UTC), 1, 0)
+    write_run_row(conn, started, datetime(2026, 1, 2, 0, 1, tzinfo=UTC), 2, 0)
+    newest_finished = datetime(2026, 1, 3, 0, 1, tzinfo=UTC)
+    newest_id = write_run_row(conn, started, newest_finished, 3, 0)
+
+    last_run = fetch_last_run(conn)
+
+    assert last_run is not None
+    assert last_run[0] == newest_id
+    assert last_run[2] == newest_finished.isoformat()
 
 
 def test_write_run_failures_round_trip_matches_run_id(tmp_path: Path) -> None:
