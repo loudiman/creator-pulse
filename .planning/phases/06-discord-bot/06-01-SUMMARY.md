@@ -167,9 +167,68 @@ None beyond the tzdata gap above.
 
 None new. The four Discord env vars this plan reads (`DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, `DISCORD_GUILD_ID`, `DISCORD_WEBHOOK_URL`) were already set at Windows User scope and verified live before this plan started (see STATE.md Blockers/Concerns). Task 3's checkpoint uses those existing values — no new setup step was introduced by this plan.
 
-## Checkpoint: Task 3 — PENDING, not run
+## Checkpoint: Task 3 — CLOSED 2026-08-06T16:38 Asia/Manila
 
-Per this dispatch's explicit constraint, the executor did not attempt Task 3 and is not authorized to close it. It is recorded here as evidence for `06-UAT.md`, not fabricated as observed.
+**Observed live by the author.** The executor did not attempt this and was not authorized to close it; the evidence below is what the author actually saw, recorded verbatim. `06-04` lifts this into `06-UAT.md` for ROADMAP criterion 1.
+
+### Evidence 1 — the digest posted (BOT-01, forced half)
+
+Console:
+
+```
+2026-08-06 16:38:10,383 INFO discord.client: logging in using static token
+2026-08-06 16:38:12,309 INFO creatorpulse: resolved digest channel id=1534659531517460584
+2026-08-06 16:38:14,149 INFO discord.gateway: Shard ID None has connected to Gateway
+```
+
+Message posted by `Creator Pulse Bot APP` at 4:38 PM:
+
+```
+CreatorPulse digest — 2026-08-06
+kaicenat / youtube — 439,535,493 views (Δ +0, +0.0%)
+pokimane / youtube — 96,004,740 views (Δ +0, +0.0%)
+xqc / youtube — 1,903,001,878 views (Δ +0, +0.0%)
+mkbhd / youtube — 5,517,991,783 views (Δ —)
+```
+
+Matches the predicted output exactly, including sort order. The three `+0.0%` rows are correct — 08-05 and 08-06 `views` are byte-identical (STATE.md data-shape note), so zero movement is the honest rendering, not a defect. `mkbhd` renders `—` and sorts last: DATA-04 and D-12 proving themselves against real data, live.
+
+### Evidence 2 — the runtime confirms the intents answer (criterion 5)
+
+```
+WARNING discord.ext.commands.bot: Privileged message content intent is missing,
+commands may not work as expected.
+```
+
+**This warning is the proof, not a problem.** discord.py emits it precisely because `message_content` was never requested, and the bot then connects and posts successfully anyway. It is stronger evidence than the Developer Portal screenshot, because it is the running library reporting what the process actually asked for. Slash commands arrive as interactions over the gateway, not as messages, so no privileged intent is needed.
+
+(`PyNaCl` / `davey` warnings are voice-support libraries. This bot never joins a voice channel — irrelevant.)
+
+### Evidence 3 — config fails loudly, before connecting (D-19)
+
+Empty value — an empty string is treated as unset, matching the `resolve_paths()` convention settled in Phase 2:
+
+```
+creatorpulse.config.DiscordConfigError: DISCORD_CHANNEL_ID is not set
+```
+
+Non-numeric value — names the variable *and* quotes what it received, with `from exc` preserving the underlying `ValueError` in the chain:
+
+```
+ValueError: invalid literal for int() with base 10: 'not-a-number'
+The above exception was the direct cause of the following exception:
+creatorpulse.config.DiscordConfigError: DISCORD_CHANNEL_ID must be an integer, got 'not-a-number'
+```
+
+Neither run emitted `logging in using static token` — **config is validated before anything connects**, so a misconfigured bot never reaches Discord. No token value appeared in any output of any of the three runs.
+
+### Operator note worth carrying forward
+
+The first attempt failed with `DISCORD_BOT_TOKEN is not set` even though the variable was set. Cause: the variables were written at Windows **User scope**, and Windows hands environment variables to a process only at process start — the author's PowerShell window predated the write. Fixed by opening a new window. Not a code defect; recorded because it will recur on any machine where the variables are set after a shell is already open.
+
+---
+
+### Original pre-checkpoint text (kept for audit)
 
 **What was built and is ready to verify:** `creatorpulse bot` resolves the four Discord env vars, connects to the gateway with `Intents.default()` (no privileged intents), guild-syncs its (currently empty) command tree, resolves the configured channel, and starts the 08:15 Asia/Manila digest loop. `creatorpulse bot --digest-now` posts one digest immediately, built from real rows in the SQLite database (`kaicenat`, `pokimane`, `xqc`, `mkbhd` — see STATE.md's data-shape note: 08-05/08-06 `views` are byte-identical for all three real creators, so every delta will correctly render as `0` and no ±20% flag will fire; `mkbhd` renders `—`, DATA-04's live proof).
 
