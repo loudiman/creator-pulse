@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: discord-bot
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-08-06T09:08:28.764Z"
+stopped_at: Completed 06-05-PLAN.md
+last_updated: "2026-08-06T09:22:45.524Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 06 (discord-bot) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 06 execution started
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -81,6 +81,7 @@ Progress: [█████████░] 88%
 | Phase 06 P01 | 17min | 2 tasks | 7 files |
 | Phase 06 P02 | 8min | 2 tasks | 7 files |
 | Phase 06 P03 | 12min | 2 tasks | 4 files |
+| Phase 06 P05 | 15min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -142,6 +143,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: MOVER_FLAG prefix is a fixed 2-char lead-in on every mover row (emoji+space or two blank spaces) so Discord's proportional font can't visually stagger the creator/source column
 - [Phase ?]: Failures section omitted entirely (no header) when there is no runs row — the could-not-determine banner already covers it, an empty header would misleadingly imply a run happened
 - [Phase ?]: round(hours) for the staleness banner age, matching Code.gs's Math.round(ageHours) exactly so both surfaces report the same integer hour count
+- [Phase ?]: 06-05: /creator matches known slugs via str.lower() (not casefold) against config._SLUG_RE's ASCII constraint; unknown name lists known slugs, empty DB says so
+- [Phase ?]: 06-05: fetch_creator_trend returns full per-source history (WHERE creator_id=? bound), TREND_LIMIT=7 applied per source in Python, not a flat SQL LIMIT
+- [Phase ?]: 06-05: build_status_text reuses fetch_last_run/staleness_hours/STALE_AFTER_HOURS unchanged from the digest banner so /status and the digest can never disagree about staleness
 
 ### Pending Todos
 
@@ -230,6 +234,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T09:08:28.733Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-08-06T09:22:45.491Z
+Stopped at: Completed 06-05-PLAN.md
 Resume file: None
