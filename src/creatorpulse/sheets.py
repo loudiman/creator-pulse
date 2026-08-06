@@ -9,6 +9,8 @@ from pathlib import Path
 import gspread
 from gspread.utils import ValueInputOption
 
+from creatorpulse.db import LatestRow, fetch_latest_rows
+
 logger = logging.getLogger("creatorpulse")
 
 DASHBOARD_TAB = "Dashboard"
@@ -38,36 +40,6 @@ HEADERS: list[str] = [
     "Δ Views",
     "Last updated (UTC)",
 ]
-
-# Correlated on (creator_id, metric_date), so this uses idx_metrics_creator_date. Rejected
-# alternatives: SQLite's bare-column-with-MAX() shorthand is a SQLite quirk rather than
-# standard SQL (the merge rule: nothing enters the repo the author cannot explain out loud);
-# a separate DISTINCT-pairs query plus a per-pair lookup would be N+1 queries for the same
-# answer. This one query yields the DISTINCT (creator_id, source) pairs D-01 names, plus each
-# pair's latest snapshot, in one pass.
-LATEST_ROWS_SQL = """
-SELECT m.creator_id, m.source, m.followers, m.views, m.collected_at, prev.views
-FROM metrics AS m
-LEFT JOIN metrics AS prev
-    -- keyed on (creator_id, metric_date): idx_metrics_creator_date's exact column pair
-    ON prev.creator_id = m.creator_id
-    AND prev.source = m.source
-    AND prev.metric_date = date(m.metric_date, '-1 day')
-WHERE m.metric_date = (
-    SELECT MAX(m2.metric_date) FROM metrics AS m2
-    WHERE m2.creator_id = m.creator_id AND m2.source = m.source
-)
-ORDER BY m.creator_id, m.source;
-"""
-
-LatestRow = tuple[str, str, int | None, int | None, str, int | None]
-
-
-def fetch_latest_rows(conn: sqlite3.Connection) -> list[LatestRow]:
-    """One indexed read of metrics: each (creator_id, source) pair's latest snapshot."""
-    cursor = conn.execute(LATEST_ROWS_SQL)
-    rows: list[LatestRow] = cursor.fetchall()
-    return rows
 
 
 def build_dashboard_rows(rows: Sequence[LatestRow]) -> list[list[object]]:

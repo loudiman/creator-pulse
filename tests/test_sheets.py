@@ -18,7 +18,7 @@ import requests
 from gspread.utils import ValueInputOption
 
 from creatorpulse.cli import run_collect
-from creatorpulse.db import connect, upsert_metric
+from creatorpulse.db import connect, fetch_latest_rows, upsert_metric
 from creatorpulse.models import MetricRecord
 from creatorpulse.sheets import (
     DELTA_PLACEHOLDER,
@@ -26,7 +26,6 @@ from creatorpulse.sheets import (
     SheetNotShared,
     SheetsKeyfileUnusable,
     build_dashboard_rows,
-    fetch_latest_rows,
     sync,
 )
 
