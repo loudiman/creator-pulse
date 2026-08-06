@@ -13,8 +13,11 @@ from typing import Any
 import pytest
 
 from creatorpulse.db import (
+    CREATOR_TREND_SQL,
     DatabaseNotInitialized,
     connect,
+    fetch_creator_trend,
+    fetch_known_creators,
     fetch_last_run,
     fetch_run_failures,
     upsert_metric,
@@ -300,3 +303,52 @@ def test_fetch_run_failures_on_run_with_no_failures_returns_empty_list(tmp_path:
     run_id = write_run_row(conn, started, started, 0, 0)
 
     assert fetch_run_failures(conn, run_id) == []
+
+
+def test_fetch_known_creators_on_empty_database_returns_empty_list(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    assert fetch_known_creators(conn) == []
+
+
+def test_fetch_known_creators_returns_distinct_ids_alphabetical(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="xqc", metric_date=date(2026, 1, 1)))
+    upsert_metric(conn, _record(creator_id="kaicenat", metric_date=date(2026, 1, 1)))
+    # A second source row for the same creator must not duplicate the id in the list.
+    upsert_metric(
+        conn, _record(creator_id="kaicenat", source="twitch", metric_date=date(2026, 1, 1))
+    )
+
+    assert fetch_known_creators(conn) == ["kaicenat", "xqc"]
+
+
+def test_fetch_creator_trend_orders_newest_first_within_each_source(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 1, 1), views=100))
+    upsert_metric(conn, _record(creator_id="c1", metric_date=date(2026, 1, 2), views=200))
+    upsert_metric(conn, _record(creator_id="other", metric_date=date(2026, 1, 1), views=999))
+
+    rows = fetch_creator_trend(conn, "c1")
+
+    assert rows == [
+        ("youtube", "2026-01-02", 200),
+        ("youtube", "2026-01-01", 100),
+    ]
+
+
+def test_fetch_creator_trend_groups_two_sources_separately(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    upsert_metric(conn, _record(creator_id="c1", source="youtube", metric_date=date(2026, 1, 1)))
+    upsert_metric(conn, _record(creator_id="c1", source="twitch", metric_date=date(2026, 1, 1)))
+
+    rows = fetch_creator_trend(conn, "c1")
+
+    sources = {source for source, _metric_date, _views in rows}
+    assert sources == {"youtube", "twitch"}
+
+
+def test_creator_trend_sql_binds_creator_id_not_interpolated() -> None:
+    assert "?" in CREATOR_TREND_SQL
+    assert "%" not in CREATOR_TREND_SQL
+    assert "{" not in CREATOR_TREND_SQL

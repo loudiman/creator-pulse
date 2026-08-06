@@ -6,6 +6,7 @@ from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 import discord
+from discord import app_commands
 from discord.ext import commands, tasks
 
 from creatorpulse import db
@@ -37,6 +38,11 @@ FLAG_THRESHOLD = 0.20
 # proportional font.
 MOVER_FLAG = "🚨"
 _UNFLAGGED_PREFIX = "  "
+
+# D-16's "recent trend" length, applied per source in build_trend_text rather than as a SQL
+# LIMIT — see CREATOR_TREND_SQL's comment in db.py for why a flat LIMIT would be wrong the
+# moment a creator has two sources.
+TREND_LIMIT = 7
 
 
 def percent_change(views: int | None, prev_views: int | None) -> float | None:
@@ -131,6 +137,55 @@ def build_digest_text(conn: sqlite3.Connection, now: datetime) -> str:
     return "\n".join(lines)
 
 
+def build_trend_text(conn: sqlite3.Connection, name: str) -> str:
+    """/creator's formatter (D-15/D-16). Matches name against fetch_known_creators()'s
+    output case-insensitively and exactly.
+
+    str.lower() rather than str.casefold(): config._SLUG_RE already constrains every
+    creator_id to lowercase ASCII letters, digits, and hyphens, so a plain lower() is an
+    exact inverse over that alphabet, while a non-ASCII lookalike (a dotted capital I, for
+    example) folds to a string no id can ever equal and falls through to the unknown-name
+    reply below rather than matching something unexpected. No substring matching, no fuzzy
+    matching — there is no ambiguity rule to defend for a handful of creators with distinct
+    names, and no path by which the bot quietly answers about the wrong one (D-15).
+    """
+    known = db.fetch_known_creators(conn)
+    normalized = name.strip().lower()
+
+    if normalized not in known:
+        if not known:
+            return "The database has no creators recorded yet."
+        return f"No creator named {name!r} — known creators: {', '.join(known)}"
+
+    rows = db.fetch_creator_trend(conn, normalized)
+    by_source: dict[str, list[tuple[str, int | None]]] = {}
+    for source, metric_date, views in rows:
+        # Rows already arrive newest-first per source (CREATOR_TREND_SQL's ORDER BY) — no
+        # re-sort needed here.
+        by_source.setdefault(source, []).append((metric_date, views))
+
+    lines = [f"Recent trend for {normalized}:"]
+    for source in sorted(by_source):
+        window = by_source[source][:TREND_LIMIT]
+        lines.append(f"{normalized} / {source}")
+        for i, (metric_date, views) in enumerate(window):
+            # Views render blank on NULL, the number on 0 — build_dashboard_rows's rule,
+            # not the digest's em-dash-for-views rule (CLAUDE.md's NULL-vs-0 discipline).
+            views_text = "" if views is None else f"{views:,}"
+            # The delta is against the next-older row *within this window*: the oldest
+            # line shown always carries the em dash, even when older rows exist beyond the
+            # seven-row cut, and NULL on either side never computes a delta against a
+            # missing number (D-12).
+            older_views = window[i + 1][1] if i + 1 < len(window) else None
+            if views is None or older_views is None:
+                delta_text = db.DELTA_PLACEHOLDER
+            else:
+                delta_text = f"{views - older_views:+,}"
+            lines.append(f"  {metric_date}: {views_text} views (Δ {delta_text})")
+
+    return "\n".join(lines)
+
+
 class CreatorPulseBot(commands.Bot):
     """Long-lived gateway client: guild-scoped slash commands, a guarded digest task loop, and
     nothing else. No module-level database connection anywhere in this file — every read
@@ -146,6 +201,29 @@ class CreatorPulseBot(commands.Bot):
         self.db_path = db_path
         self.digest_now = digest_now
         self.channel: discord.abc.Messageable | None = None
+        self._register_commands()
+
+    def _register_commands(self) -> None:
+        """The bot's slash commands, registered once at construction so setup_hook's guild
+        sync has something to sync. Each handler opens a short-lived read connection, calls
+        one pure formatter, and closes it in a finally — no module-level connection anywhere
+        in this file (ROADMAP's pre-locked note). Never defers: a single indexed SQLite read
+        finishes comfortably inside Discord's 3-second initial-response window
+        (06-RESEARCH Priority 4), so deferring would add a second round trip for nothing."""
+
+        @self.tree.command(
+            name="creator", description="Show a creator's last seven recorded days, per source"
+        )
+        @app_commands.describe(name="creator id, case-insensitive (e.g. kaicenat)")
+        async def creator_command(interaction: discord.Interaction, name: str) -> None:
+            conn = db.connect(self.db_path, create=False)
+            try:
+                text = build_trend_text(conn, name)
+            finally:
+                conn.close()
+            await interaction.response.send_message(
+                text, allowed_mentions=discord.AllowedMentions.none()
+            )
 
     async def setup_hook(self) -> None:
         guild = discord.Object(id=self.config.guild_id)

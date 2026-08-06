@@ -18,7 +18,9 @@ import requests
 from creatorpulse import collector
 from creatorpulse.bot import (
     MOVER_FLAG,
+    TREND_LIMIT,
     build_digest_text,
+    build_trend_text,
     format_percent,
     percent_change,
     staleness_hours,
@@ -424,6 +426,185 @@ def test_digest_text_on_empty_database_returns_an_explicit_message_not_an_empty_
 
     assert text != ""
     assert "No rows recorded yet" in text
+
+
+# --- build_trend_text() (BOT-04, D-15/D-16) -----------------------------------------------
+
+
+def _seed_days(
+    conn: sqlite3.Connection, creator_id: str, source: str, days: list[tuple[date, int | None]]
+) -> None:
+    for metric_date, views in days:
+        upsert_metric(
+            conn,
+            _record(creator_id=creator_id, source=source, metric_date=metric_date, views=views),
+        )
+
+
+def test_creator_trend_matches_mixed_case_name(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+
+    text = build_trend_text(conn, "KaiCenat")
+
+    assert "kaicenat / youtube" in text
+    assert "No creator named" not in text
+
+
+def test_creator_trend_matches_whitespace_padded_name(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+
+    text = build_trend_text(conn, "  kaicenat  ")
+
+    assert "kaicenat / youtube" in text
+
+
+def test_creator_trend_does_not_match_a_substring_of_a_known_slug(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+
+    text = build_trend_text(conn, "kai")
+
+    assert "No creator named" in text
+    assert "kaicenat" in text  # named in the known-slugs list, not matched
+
+
+def test_creator_trend_dotted_capital_i_does_not_match(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+
+    text = build_trend_text(conn, "KAİCENAT")
+
+    assert "No creator named" in text
+
+
+def test_creator_trend_unknown_name_lists_known_slugs(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+    _seed_days(conn, "xqc", "youtube", [(date(2026, 8, 5), 200)])
+
+    text = build_trend_text(conn, "nobody")
+
+    assert "nobody" in text
+    assert "kaicenat" in text
+    assert "xqc" in text
+
+
+def test_creator_trend_empty_database_says_no_creators_recorded_yet(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    text = build_trend_text(conn, "anyone")
+
+    assert "no creators recorded" in text.lower()
+    assert "anyone" not in text  # not an empty-list rendering of the unknown-name reply
+
+
+def test_creator_trend_single_day_creator_renders_one_line_with_delta_placeholder(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+
+    text = build_trend_text(conn, "kaicenat")
+    day_lines = [line for line in text.splitlines() if line.strip().startswith("2026-")]
+
+    assert len(day_lines) == 1
+    assert f"(Δ {DELTA_PLACEHOLDER})" in day_lines[0]
+
+
+def test_creator_trend_three_days_renders_three_lines_newest_first_oldest_placeholder(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(
+        conn,
+        "kaicenat",
+        "youtube",
+        [
+            (date(2026, 8, 3), 100),
+            (date(2026, 8, 4), 150),
+            (date(2026, 8, 5), 200),
+        ],
+    )
+
+    text = build_trend_text(conn, "kaicenat")
+    day_lines = [line for line in text.splitlines() if line.strip().startswith("2026-")]
+
+    assert len(day_lines) == 3
+    assert day_lines[0].strip().startswith("2026-08-05")
+    assert day_lines[-1].strip().startswith("2026-08-03")
+    assert f"(Δ {DELTA_PLACEHOLDER})" in day_lines[-1]
+
+
+def test_creator_trend_more_than_seven_days_renders_exactly_seven_lines(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    days = [(date(2026, 8, 1 + i), 100 + i) for i in range(10)]
+    _seed_days(conn, "kaicenat", "youtube", days)
+
+    text = build_trend_text(conn, "kaicenat")
+    day_lines = [line for line in text.splitlines() if line.strip().startswith("2026-")]
+
+    assert len(day_lines) == TREND_LIMIT
+    # The oldest line shown carries the em dash even though an older row exists beyond
+    # the seven-row cut — the delta is computed within the window, not against history.
+    assert f"(Δ {DELTA_PLACEHOLDER})" in day_lines[-1]
+
+
+def test_creator_trend_two_sources_render_in_separate_blocks(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+    _seed_days(conn, "kaicenat", "twitch", [(date(2026, 8, 5), 50)])
+
+    text = build_trend_text(conn, "kaicenat")
+
+    assert "kaicenat / youtube" in text
+    assert "kaicenat / twitch" in text
+
+
+def test_creator_trend_null_views_renders_blank_and_next_day_carries_placeholder(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(
+        conn,
+        "kaicenat",
+        "youtube",
+        [
+            (date(2026, 8, 4), None),
+            (date(2026, 8, 5), 200),
+        ],
+    )
+
+    text = build_trend_text(conn, "kaicenat")
+    lines_by_date = {
+        line.strip().split(":")[0]: line
+        for line in text.splitlines()
+        if line.strip().startswith("2026-")
+    }
+
+    null_day = lines_by_date["2026-08-04"]
+    newer_day = lines_by_date["2026-08-05"]
+    # views_text is blank on NULL, not the digit "0" — split off the part between the date's
+    # colon and the literal word "views".
+    views_part = null_day.split(":", 1)[1].split("views")[0].strip()
+    assert views_part == ""
+    assert f"(Δ {DELTA_PLACEHOLDER})" in null_day
+    # The newer day's baseline (the NULL row) is missing — never a delta against nothing.
+    assert f"(Δ {DELTA_PLACEHOLDER})" in newer_day
+
+
+def test_creator_trend_name_with_quote_and_sql_fragment_returns_unknown_reply(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    _seed_days(conn, "kaicenat", "youtube", [(date(2026, 8, 5), 100)])
+
+    text = build_trend_text(conn, "foo'; DROP TABLE metrics; --")  # must not raise
+
+    assert "No creator named" in text
+    # The database is untouched — the metrics table still answers normally.
+    assert conn.execute("SELECT COUNT(*) FROM metrics").fetchone()[0] == 1
 
 
 # --- build_alert_text() ------------------------------------------------------------------

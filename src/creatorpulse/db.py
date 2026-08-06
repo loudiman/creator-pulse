@@ -146,6 +146,52 @@ def fetch_run_failures(conn: sqlite3.Connection, run_id: int) -> list[tuple[str,
     return rows
 
 
+# The distinct creator_id values ever recorded, alphabetical — the "known slugs" list D-15's
+# unknown-name reply names. Built from what was collected, not from creators.yaml (Phase 4
+# D-01's rule applied here too): a creator added to the config this morning genuinely has no
+# rows yet, and saying so is honest.
+KNOWN_CREATORS_SQL = """
+SELECT DISTINCT creator_id
+FROM metrics
+ORDER BY creator_id;
+"""
+
+
+def fetch_known_creators(conn: sqlite3.Connection) -> list[str]:
+    """Every creator_id the database holds at least one metric row for, alphabetical."""
+    cursor = conn.execute(KNOWN_CREATORS_SQL)
+    return [row[0] for row in cursor.fetchall()]
+
+
+# creator_id is the trailing bound ?, never interpolated — this is the one query in the whole
+# codebase whose input originates from a stranger typing in a Discord channel, bound for
+# exactly that reason (T-06-01). The WHERE clause alone is what uses
+# idx_metrics_creator_date; ordering by source is an in-memory sort over a handful of rows per
+# creator, not a second index.
+#
+# D-16 named "one indexed read with LIMIT 7". A flat LIMIT 7 is only correct while a creator
+# has exactly one source — creators.yaml already declares twitch and tiktok entries that will
+# start producing rows the moment either is registered, at which point a flat limit silently
+# interleaves two sources into three and a half days each. The read stays one indexed pass;
+# the seven-row-per-source cut is applied in bot.build_trend_text instead of here.
+CREATOR_TREND_SQL = """
+SELECT source, metric_date, views
+FROM metrics
+WHERE creator_id = ?
+ORDER BY source, metric_date DESC;
+"""
+
+
+def fetch_creator_trend(
+    conn: sqlite3.Connection, creator_id: str
+) -> list[tuple[str, str, int | None]]:
+    """Every recorded (source, metric_date, views) row for one creator, newest first within
+    each source. creator_id is bound as a parameter, never interpolated (T-06-01)."""
+    cursor = conn.execute(CREATOR_TREND_SQL, (creator_id,))
+    rows: list[tuple[str, str, int | None]] = cursor.fetchall()
+    return rows
+
+
 class DatabaseNotInitialized(Exception):
     """Raised by connect(create=False) when the file or its metrics table is absent (D-04)."""
 
