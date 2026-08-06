@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 Phase: 05 (apps-script) — EXECUTING
 Plan: 3 of 3
 Status: Phase complete — ready for verification
-Last activity: 2026-08-06 — Phase 05 execution started
+Last activity: 2026-08-06 — Completed quick task 260806-k5w: land deploy/ unit files, .env.example Discord vars, and the dated Hard Rule 1 amendment
 
 Progress: [██████████] 95%
 
@@ -140,11 +140,20 @@ None yet.
 
 - **Phase 3, confirm early:** `GET /helix/videos` `view_count` app-token accessibility was verified indirectly, not live-tested. Make one real call before building the parser around it. If it walls off like the followers endpoint, the Twitch metric needs rethinking on day one.
 - **Phase 4, unknowable in advance:** TikTok public page structure and selectors need live inspection. Budget for at least one iteration against saved HTML fixtures. Likely needs `--research-phase 4`.
-- **Ownership constraint, all phases:** Phases 2 and 5 are human-built end to end; Phase 6 is mixed. The agent must not generate systemd units, Apps Script code, or Discord Developer Portal configuration.
+- **Ownership constraint, all phases (AMENDED 2026-08-06, twice):** Phase 2 is human-built except `.service`/`.timer` files, which the agent may now write into `deploy/` — see `.claude/CLAUDE.md` "Amendment 2026-08-06 — rule 1 narrowed for `deploy/` unit files" and 06-CONTEXT.md D-21. Phase 5 is `mixed` (Apps Script written by the agent, Phase 5 D-01). Still binding in full: SSH config, non-root user setup, UFW rules, `docs/deploy.md`, and all Discord Developer Portal configuration. Both amendments are dated, scoped exceptions granted on the clock, not a general relaxation.
 - **Hard deadline:** ship Wed 5 Aug 2026, interview Thu 6 Aug 8:00pm PHT. Roughly one phase per day, part-time. Cut order is fixed in ROADMAP.md — slash commands, then TikTok, then History tab. Never cut Phases 2, 5, or 6.
 - Phase 3 human-observed real-data run outstanding (ROADMAP Definition of Green) — needs droplet SSH access and real YOUTUBE_API_KEY/TWITCH_CLIENT_ID/SECRET; see 03-UAT.md Gaps
 - Phase 3 PARTIAL: 5/5 must-haves verified in code, all 4 green gates pass, but ROADMAP's human-observed real-data run is outstanding. 03-UAT.md holds 5 PENDING entries with close-later commands. Needs droplet /etc/creatorpulse/creatorpulse.env filled (YOUTUBE_API_KEY available now; Twitch blocked on 2FA).
 - Phase 5 PARTIAL: 05-UAT.md entry 7 (ROADMAP criterion 5, author's unaided onEdit/webhook explanation) PENDING by author decision at ~06:00 Asia/Manila 2026-08-06 to proceed to Phase 6; interview is 20:00 same day. Close-later step in 05-UAT.md. Also PENDING (non-gating): criterion 4's natural 09:00 Manila trigger fire, bonus evidence only.
+- `docs/deploy.md` (Phase 2 D-13) still absent from the repo. Human-owned and untouched by the rule-1 amendment — the agent must not draft or outline it. Phase 7 work.
+- `deploy/creatorpulse-bot.service` is committed but must NOT be installed or enabled yet: `creatorpulse bot` is still the stub at `src/creatorpulse/cli.py:155` returning exit 3, and `Restart=on-failure` would produce a 10-second restart loop. Install after Phase 6 executes.
+- Local branch is 25+ commits ahead of `origin/main` and unpushed. Also blocks worktree isolation (`origin/HEAD` unresolved → quick tasks auto-degrade to sequential).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260806-k5w | land deploy/ unit files, .env.example Discord + keyfile vars, and the dated Hard Rule 1 amendment | 2026-08-06 | bb9c72f | [260806-k5w-land-deploy-unit-files-env-example-disco](./quick/260806-k5w-land-deploy-unit-files-env-example-disco/) |
 
 ## Deferred Items
 
