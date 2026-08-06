@@ -186,6 +186,40 @@ def build_trend_text(conn: sqlite3.Connection, name: str) -> str:
     return "\n".join(lines)
 
 
+def build_status_text(conn: sqlite3.Connection, now: datetime) -> str:
+    """/status's formatter (D-17). Reuses fetch_last_run(), staleness_hours(), and
+    STALE_AFTER_HOURS exactly as build_digest_text's banner does, so the digest and /status
+    can never disagree about whether the system is stale."""
+    last_run = db.fetch_last_run(conn)
+    if last_run is None:
+        # Never a fabricated OK from an empty database (PITFALLS.md §18(d)); Phase 7
+        # criterion 2 grades this command on reporting staleness honestly.
+        return "No run has been recorded yet."
+
+    run_id, started_at, finished_at, rows_written, failure_count = last_run
+    duration_seconds = (
+        datetime.fromisoformat(finished_at) - datetime.fromisoformat(started_at)
+    ).total_seconds()
+    # Strictly greater-than, the same constant and the same comparison direction as the
+    # digest banner and Phase 5's watchdog — exactly STALE_AFTER_HOURS reads OK everywhere.
+    hours = staleness_hours(finished_at, now)
+    verdict = "STALE" if hours > STALE_AFTER_HOURS else "OK"
+
+    lines = [
+        f"Last run finished {finished_at} — {verdict}",
+        f"Duration: {duration_seconds:.1f}s",
+        f"Rows written: {rows_written}",
+        f"Failures: {failure_count}",
+    ]
+    if failure_count > 0:
+        # The same rows the digest lists and the collector's own alert was built from, so
+        # all three surfaces name the same failures for the same run.
+        for creator_id, source, cause, message in db.fetch_run_failures(conn, run_id):
+            lines.append(f"  {creator_id} / {source} — {cause}: {message}")
+
+    return "\n".join(lines)
+
+
 class CreatorPulseBot(commands.Bot):
     """Long-lived gateway client: guild-scoped slash commands, a guarded digest task loop, and
     nothing else. No module-level database connection anywhere in this file — every read
@@ -204,10 +238,10 @@ class CreatorPulseBot(commands.Bot):
         self._register_commands()
 
     def _register_commands(self) -> None:
-        """The bot's slash commands, registered once at construction so setup_hook's guild
-        sync has something to sync. Each handler opens a short-lived read connection, calls
-        one pure formatter, and closes it in a finally — no module-level connection anywhere
-        in this file (ROADMAP's pre-locked note). Never defers: a single indexed SQLite read
+        """Both slash commands, registered once at construction so setup_hook's guild sync
+        has something to sync. Each handler opens a short-lived read connection, calls one
+        pure formatter, and closes it in a finally — no module-level connection anywhere in
+        this file (ROADMAP's pre-locked note). Neither defers: a single indexed SQLite read
         finishes comfortably inside Discord's 3-second initial-response window
         (06-RESEARCH Priority 4), so deferring would add a second round trip for nothing."""
 
@@ -219,6 +253,21 @@ class CreatorPulseBot(commands.Bot):
             conn = db.connect(self.db_path, create=False)
             try:
                 text = build_trend_text(conn, name)
+            finally:
+                conn.close()
+            await interaction.response.send_message(
+                text, allowed_mentions=discord.AllowedMentions.none()
+            )
+
+        @self.tree.command(name="status", description="Report the last collector run's status")
+        async def status_command(interaction: discord.Interaction) -> None:
+            # DatabaseNotInitialized is allowed to propagate rather than being turned into a
+            # friendly reply — a bot answering "everything's fine" while pointed at a
+            # database that does not exist is the failure mode this project has refused at
+            # every prior boundary.
+            conn = db.connect(self.db_path, create=False)
+            try:
+                text = build_status_text(conn, datetime.now(MANILA))
             finally:
                 conn.close()
             await interaction.response.send_message(

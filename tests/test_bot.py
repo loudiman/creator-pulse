@@ -7,7 +7,7 @@ and sheets.sync; the gateway, the task loop, and command registration are untest
 """
 
 import sqlite3
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -18,8 +18,10 @@ import requests
 from creatorpulse import collector
 from creatorpulse.bot import (
     MOVER_FLAG,
+    STALE_AFTER_HOURS,
     TREND_LIMIT,
     build_digest_text,
+    build_status_text,
     build_trend_text,
     format_percent,
     percent_change,
@@ -605,6 +607,133 @@ def test_creator_trend_name_with_quote_and_sql_fragment_returns_unknown_reply(
     assert "No creator named" in text
     # The database is untouched — the metrics table still answers normally.
     assert conn.execute("SELECT COUNT(*) FROM metrics").fetchone()[0] == 1
+
+
+# --- build_status_text() (BOT-05, D-17) -----------------------------------------------------
+
+
+def test_status_text_no_runs_row_reports_not_recorded_and_no_ok(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    text = build_status_text(conn, datetime(2026, 8, 6, 8, 15, tzinfo=UTC))
+
+    assert "no run has been recorded" in text.lower()
+    assert "OK" not in text
+
+
+def test_status_text_run_one_hour_old_reports_ok(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    finished = now - timedelta(hours=1)
+    write_run_row(conn, finished, finished, 3, 0)
+
+    text = build_status_text(conn, now)
+
+    assert "— OK" in text
+    assert "STALE" not in text
+
+
+def test_status_text_run_exactly_26_hours_old_reports_ok(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    finished = now - timedelta(hours=STALE_AFTER_HOURS)
+    write_run_row(conn, finished, finished, 3, 0)
+
+    text = build_status_text(conn, now)
+
+    assert "STALE" not in text
+    assert "— OK" in text
+
+
+def test_status_text_run_26_hours_one_minute_old_reports_stale(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    finished = now - timedelta(hours=STALE_AFTER_HOURS, minutes=1)
+    write_run_row(conn, finished, finished, 3, 0)
+
+    text = build_status_text(conn, now)
+
+    assert "STALE" in text
+
+
+def test_status_text_duration_renders_with_exactly_one_decimal_place(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 8, 6, 0, 0, 0, tzinfo=UTC)
+    finished = started + timedelta(seconds=1.74)
+    write_run_row(conn, started, finished, 3, 0)
+
+    text = build_status_text(conn, finished)
+
+    assert "Duration: 1.7s" in text
+
+
+def test_status_text_duration_under_tenth_of_second_still_renders_a_number(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 8, 6, 0, 0, 0, tzinfo=UTC)
+    finished = started + timedelta(seconds=0.03)
+    write_run_row(conn, started, finished, 3, 0)
+
+    text = build_status_text(conn, finished)
+
+    assert "Duration: 0.0s" in text
+
+
+def test_status_text_reports_stored_rows_written_and_failure_count(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 42, 0)
+
+    text = build_status_text(conn, now)
+
+    assert "Rows written: 42" in text
+    assert "Failures: 0" in text
+
+
+def test_status_text_two_failures_names_both_failing_sources(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    run_id = write_run_row(conn, now, now, 0, 2)
+    write_run_failures(
+        conn,
+        run_id,
+        [
+            RunFailure(creator_id="c1", source="youtube", cause="ValueError", message="boom"),
+            RunFailure(creator_id="c2", source="twitch", cause="KeyError", message="missing"),
+        ],
+    )
+
+    text = build_status_text(conn, now)
+
+    assert "c1 / youtube" in text
+    assert "c2 / twitch" in text
+    assert "Failures: 2" in text
+
+
+def test_status_text_zero_failures_names_no_sources(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 3, 0)
+
+    text = build_status_text(conn, now)
+
+    assert "Failures: 0" in text
+    assert "/" not in text  # no "creator / source" failure line rendered
+
+
+def test_status_text_contains_no_environment_value(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _set_all_discord_vars(monkeypatch)
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    now = datetime(2026, 8, 6, 8, 15, tzinfo=UTC)
+    write_run_row(conn, now, now, 3, 0)
+
+    text = build_status_text(conn, now)
+
+    assert "sekrit-token" not in text
+    assert "https://discord.example/webhook" not in text
 
 
 # --- build_alert_text() ------------------------------------------------------------------
