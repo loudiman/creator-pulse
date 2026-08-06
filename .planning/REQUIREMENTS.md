@@ -197,12 +197,12 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SCRIPT-02 | Phase 5: Apps Script | Complete |
 | SCRIPT-03 | Phase 5: Apps Script | Complete |
 | SCRIPT-04 | Phase 5: Apps Script | Complete |
-| BOT-01 | Phase 6: Discord Bot | Pending |
+| BOT-01 | Phase 6: Discord Bot | In progress (06-01 tracer landed; failures/digest gaps close in 06-02/06-03; Task 3 live checkpoint pending) |
 | BOT-02 | Phase 6: Discord Bot | Pending |
 | BOT-03 | Phase 6: Discord Bot | Pending |
 | BOT-04 | Phase 6: Discord Bot | Pending |
 | BOT-05 | Phase 6: Discord Bot | Pending |
-| BOT-06 | Phase 6: Discord Bot | Pending |
+| BOT-06 | Phase 6: Discord Bot | In progress (06-01: `creatorpulse bot` is a real command, no longer the stub; systemd install and reboot survival deferred to human step + 06-04) |
 | BOT-07 | Phase 6: Discord Bot | Pending |
 | OPS-01 | Phase 2: VPS & systemd | Complete |
 | OPS-02 | Phase 1: Skeleton | Complete |

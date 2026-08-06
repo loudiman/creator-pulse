@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 05
-current_phase_name: apps-script
-status: verifying
-stopped_at: Phase 6 planned — 5 plans, 4 waves, plan-checker PASSED; 06-01 needs 4 Discord env vars set locally
-last_updated: "2026-08-06T07:40:09.654Z"
+current_phase: 06
+current_phase_name: discord-bot
+status: executing
+stopped_at: Completed 06-01-PLAN.md code tasks; Task 3 human checkpoint PENDING
+last_updated: "2026-08-06T08:18:24.464Z"
 last_activity: 2026-08-06
-last_activity_desc: "Completed quick task 260806-k5w: land deploy/ unit files, .env.example Discord vars, and the dated Hard Rule 1 amendment"
+last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-29)
 
 **Core value:** The unattended daily run — a timer fires, real numbers land in the database, the Sheet reflects them, and Discord says so, with no human in the loop.
-**Current focus:** Phase 05 — apps-script
+**Current focus:** Phase 06 — discord-bot
 
 ## Current Position
 
-Phase: 05 (apps-script) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-08-06 — Completed quick task 260806-k5w: land deploy/ unit files, .env.example Discord vars, and the dated Hard Rule 1 amendment
+Phase: 06 (discord-bot) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-08-06 — Phase 06 execution started
 
-Progress: [██████████] 95%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ Progress: [██████████] 95%
 | Phase 05 P01 | 40min | 2 tasks | 5 files |
 | Phase 05 P02 | 55min | 3 tasks | 2 files |
 | Phase 05 P03 | 20min | 1 tasks | 3 files |
+| Phase 06 P01 | 17min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -131,6 +132,9 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 05-02: watchdog's three outcomes (stale, cannot-determine, silence) proven independently live; silence backed by a Completed Executions run closes D-07 as verified, not assumed
 - [Phase ?]: 05-03: Task 2 (author's live criterion-5 walkthrough/write-up) deliberately not attempted — author decided to proceed to Phase 6 ahead of the interview; recorded PENDING in 05-UAT.md per D-03, not fabricated
 - [Phase ?]: 05-03: COVERAGE.md ships 4 INTEGRATE / 27 OPT-OUT rows for the Discord webhook surface; REQUIREMENTS.md By-phase Phase 5 owner corrected human -> mixed
+- [Phase ?]: 06-01: D-13 moved LATEST_ROWS_SQL/LatestRow/fetch_latest_rows to db.py alone, own commit, gate green before Task 2
+- [Phase ?]: 06-01: bot.py imports sheets.DELTA_PLACEHOLDER per plan text/acceptance criteria — pulls gspread into bot process import graph, narrower than 06-CONTEXT's D-13 rationale; flagged not resolved
+- [Phase ?]: 06-01: tzdata installed into .venv only (not pyproject.toml) to unblock zoneinfo Asia/Manila on Windows dev machine lacking system tz database; VPS is Linux with system tzdata, zero production impact
 
 ### Pending Todos
 
@@ -150,6 +154,7 @@ None yet.
   stale and have been replaced by this one. **03-UAT.md's five PENDING entries are not closed by this
   note** — each carries its own per-entry evidence requirement and must be closed against its own
   close-later command, not against this summary. Twitch remains blocked on 2FA (SRC-02).
+
 - **Data-shape findings from that database, relevant to Phase 6 execution (recorded 2026-08-06):**
   - **2026-08-04's three rows are synthetic seed data, not collected metrics** — round figures
     (1,095,000,000 / 895,000,000 / 8,100,000,000 followers 13,000,000), all three creators, no
@@ -157,10 +162,12 @@ None yet.
     collected history begins 2026-08-05**, so the project has two days of real data, not three. A
     consequence to expect and not misread: xqc's followers appear to "drop" 13,000,000 → 2,500,000
     between 08-04 and 08-05 — that is the seed giving way to the real number, not a metric movement.
+
   - **08-05 and 08-06 `views` are byte-identical for all three real creators** (kaicenat 439,535,493;
     pokimane 96,004,740; xqc 1,903,001,878). YouTube's `viewCount` is served from a cache that had not
     rolled over between the two runs. This is a property of the data source, not a collector bug — and
     `0` correctly means "the platform reported the same number", never "no data" (CLAUDE.md NULL-vs-0).
+
   - **Therefore today's digest renders every delta as 0 and no ±20% flag can fire live (BOT-02).**
     Decision: accept and record it. BOT-02 is proven by the four boundary unit tests plan 06-03
     specifies (either side of ±20%), and `06-UAT.md` must state plainly that no flag fired live
@@ -168,8 +175,10 @@ None yet.
     (temporarily editing one 08-05 `views` value, watching the flag render, restoring) remains
     available for the interview demo and must be labelled a forced proof, exactly as Phase 5 D-08
     labelled the forced watchdog run.
+
   - **`mkbhd` still renders `—` and is unaffected** — its latest row is 08-05 with no 08-04 baseline
     of its own, so it is live proof of DATA-04 and D-12 regardless of the zero deltas.
+
 - Phase 5 PARTIAL: 05-UAT.md entry 7 (ROADMAP criterion 5, author's unaided onEdit/webhook explanation) PENDING by author decision at ~06:00 Asia/Manila 2026-08-06 to proceed to Phase 6; interview is 20:00 same day. Close-later step in 05-UAT.md. Also PENDING (non-gating): criterion 4's natural 09:00 Manila trigger fire, bonus evidence only.
 - `docs/deploy.md` (Phase 2 D-13) still absent from the repo. Human-owned and untouched by the rule-1 amendment — the agent must not draft or outline it. Phase 7 work.
 - `deploy/creatorpulse-bot.service` is committed but must NOT be installed or enabled yet: `creatorpulse bot` is still the stub at `src/creatorpulse/cli.py:155` returning exit 3, and `Restart=on-failure` would produce a 10-second restart loop. Install after Phase 6 executes.
@@ -181,6 +190,7 @@ None yet.
   unset locally so the repo-root `creatorpulse.db` (gitignored, real data copied from the droplet)
   is used. Remove with:
   `'DISCORD_BOT_TOKEN','DISCORD_WEBHOOK_URL','DISCORD_CHANNEL_ID','DISCORD_GUILD_ID','YOUTUBE_API_KEY' | ForEach-Object { [Environment]::SetEnvironmentVariable($_,$null,'User') }`
+
 - **Discord credentials verified live 2026-08-06, and they cross-check:** bot token authenticates as
   `Creator Pulse Bot#6328` (id 1534687081308225556); the bot is a member of guild
   `Creator Pulse Discord` matching `DISCORD_GUILD_ID`; and the webhook's own `channel_id` and
@@ -188,11 +198,14 @@ None yet.
   (bot token → channel) and the collector's alert (webhook) reach the **same** channel — Phase 6 D-02's
   split transport and Phase 5 D-16's one-channel rule are verified against live credentials, not
   assumed. No message was posted; a `GET` on a webhook returns metadata only.
+
 - **BOT-07 completed by hand 2026-08-06** (Hard Rule 3, human-owned): zero privileged intents
-  (Presence, Server Members, Message Content all OFF), Public Bot OFF, Install Link None, Guild
+  (Presence, Server Members, Message Content all OFF), Public Bot OFF, Install Link , Guild
   Install context ON, and the bot's guild role stripped of Administrator down to View Channel +
-  Send Messages. This is the evidence for ROADMAP Phase 6 criterion 5's "why none of them are
+  Send Messages. This is the evidence for ROADMAP Phase 6 criterion 5's "why of them are
   privileged" half; the author's own written explanation still has to land in `06-UAT.md` unaided.
+
+- 06-01 Task 3 (blocking human checkpoint): creatorpulse bot --digest-now not yet run live. Exact commands recorded in 06-01-SUMMARY.md's Checkpoint section. Author must run and screenshot before 06-04's 06-UAT.md closes criterion 1's forced half.
 
 ### Quick Tasks Completed
 
@@ -210,6 +223,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T07:40:09.601Z
-Stopped at: Phase 6 planned — 5 plans, 4 waves, plan-checker PASSED; 06-01 needs 4 Discord env vars set locally
-Resume file: .planning/phases/06-discord-bot/06-01-PLAN.md
+Last session: 2026-08-06T08:18:24.397Z
+Stopped at: Completed 06-01-PLAN.md code tasks; Task 3 human checkpoint PENDING
+Resume file: None
