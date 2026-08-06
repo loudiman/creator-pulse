@@ -9,6 +9,8 @@ generate them into a scratch file for the author to copy:
 
 1. **VPS provisioning and systemd** — SSH config, non-root user, UFW rules, `.service` and
    `.timer` unit files. You may write Python the units invoke; you may not write the units.
+   *(Narrowed 2026-08-06 for `.service`/`.timer` files only — see the amendment below. SSH config,
+   non-root user setup, UFW rules, and `docs/deploy.md` are untouched.)*
 2. ~~**The entire Apps Script layer** — `onOpen`, `onEdit`, time-driven triggers, conditional
    formatting. Roughly 100 lines, typed by hand.~~ — **AMENDED 2026-08-06, see below.**
 3. **Discord Developer Portal setup** — bot registration, intents, scopes, invite URL. You may
@@ -28,8 +30,34 @@ The control that replaces hand-typing: ROADMAP criterion 5 ("the author can walk
 the `onEdit` trigger's event object and the webhook call from memory") stands unchanged, and closes
 only when the author writes that explanation into `05-UAT.md` in their own words, unaided.
 
-**Rules 1 and 3 are untouched and still bind in full.** This is one scoped, dated exception, not a
+**Rules 1 and 3 are untouched and still bind in full** (rule 1's unit-file clause was later narrowed
+by the amendment below; rule 3 remains untouched). This is one scoped, dated exception, not a
 general relaxation. See `.planning/phases/05-apps-script/05-CONTEXT.md` D-01 through D-04.
+
+### Amendment 2026-08-06 — rule 1 narrowed for `deploy/` unit files
+
+With roughly thirteen hours to the interview and Phases 6 and 7 both outstanding, the author granted
+the agent permission to write `.service` and `.timer` files into `deploy/`. Phase 6's two-process
+split needs a second unit, and the reason is the clock, named as the clock, not dressed up as a
+design improvement. Granted explicitly by the author in conversation.
+
+**What did not change:** SSH configuration, non-root user setup, UFW rules, and `docs/deploy.md`
+are untouched and bind in full — the exception is unit files, nothing else. Hard Rule 3 (Discord
+Developer Portal) is untouched; the author completed BOT-07 by hand on 2026-08-06 — bot
+registration, zero privileged intents, a non-admin role with View Channel and Send Messages only.
+
+The control that replaces hand-writing: ROADMAP Phase 6 criterion 5 stands unchanged — the bot
+survives a reboot as its own systemd service, independent of the collector, and the author can
+explain which intents it requests and why none of them are privileged. It closes only when the
+author installs the unit themselves and writes that explanation into `06-UAT.md` in their own
+words, unaided. Same control structure as Phase 5 D-03.
+
+`deploy/creatorpulse.service` and `deploy/creatorpulse.timer` are transcriptions of the author's
+own hand-written files, not generated ones. Only `deploy/creatorpulse-bot.service` is agent-drafted,
+and it is the only file that needed this exception.
+
+One scoped, dated exception, not a general relaxation. See
+`.planning/phases/06-discord-bot/06-CONTEXT.md` D-21.
 
 ## Merge rule
 

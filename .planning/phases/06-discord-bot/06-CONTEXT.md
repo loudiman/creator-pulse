@@ -28,13 +28,15 @@ that amendment, and both bind this phase in full:
 | Artifact | Owner | Agent may |
 |---|---|---|
 | `src/creatorpulse/bot.py` and every other Python file | agent | write |
-| The bot's `.service` unit file | **human** | not write, not edit, not draft, not "fix" |
+| The bot's `.service` unit file | **agent** (narrowed 2026-08-06, see D-21) | write, under the dated exception only |
 | Bot registration, intents, scopes, invite URL in the Developer Portal | **human** | not perform |
 | `.env.example` additions naming the new variables | agent | write (names only, never values) |
 
-The agent may state *what* the unit needs (which command, which `EnvironmentFile`, that it wants
-`Restart=on-failure`) as prose in a plan or in `06-UAT.md`. It may not produce the file. Phase 2
-D-12 is the binding text and it says "including when asked."
+**Amended 2026-08-06 — see D-21 below.** The agent now writes `deploy/creatorpulse-bot.service`
+under a dated, scoped exception to `.claude/CLAUDE.md` Hard Rule 1, granted by the author because of
+the interview clock. SSH config, non-root user setup, UFW rules, and `docs/deploy.md` remain
+human-owned and untouched; Hard Rule 3 (Discord Developer Portal) is untouched. Phase 2 D-12's
+"including when asked" text still binds everywhere except this one narrow carve-out.
 
 **Not in this phase:** the README and the build journal (Phase 7, OPS-08/09); the cold-start
 narrated rehearsal (Phase 7); any change to the Dashboard column layout (frozen by Phase 4 D-03 and
@@ -44,9 +46,12 @@ now depended on by Phase 5's triggers); the Apps Script watchdog (Phase 5, done,
 **Repo gap noticed during scout, not caused by this phase:** `git ls-files` shows no `deploy/`
 directory and no `docs/deploy.md`, though Phase 2 D-12 and D-13 both say those are committed
 artifacts. Phase 2's units appear to exist only on the droplet. This phase was supposed to add a
-*second diffable* unit alongside the first; there is currently no first. Flagged for the author —
-this is Phase 2/Phase 7 work, and the agent cannot close it (writing those files is exactly what
-Hard Rule 1 forbids).
+*second diffable* unit alongside the first; there is currently no first. **Closed by quick task
+260806-k5w**, which lands all three units — `deploy/creatorpulse.service`,
+`deploy/creatorpulse.timer` (transcriptions), and `deploy/creatorpulse-bot.service` (agent-drafted,
+under D-21's exception) — in `deploy/`. `docs/deploy.md` remains outstanding and human-owned
+(Phase 2 D-13, untouched by the amendment). Still a scout note about pre-existing Phase 2 debt, not
+a Phase 6 problem.
 
 </domain>
 
@@ -308,6 +313,29 @@ open. What genuinely remains at the planner's and implementer's discretion:
 - Whether the freshness threshold is one shared constant imported by the digest banner (D-04) and
   `/status` (D-17). Sharing it is strongly preferred — two copies of 26 can drift — but the
   mechanism is the implementer's.
+
+### Ownership Amendment
+
+- **D-21:** **The agent writes `deploy/creatorpulse-bot.service`, under a dated, scoped exception
+  to `.claude/CLAUDE.md` Hard Rule 1, granted 2026-08-06.** With roughly thirteen hours to the
+  interview and Phases 6 and 7 both outstanding, the author permitted the agent to write the bot's
+  unit file into `deploy/`. The reason is the clock, named as the clock, not dressed up as a design
+  improvement — the same discipline Phase 5 D-01 through D-04 applied to the Apps Script exception.
+  SSH configuration, non-root user setup, UFW rules, and `docs/deploy.md` are untouched and bind in
+  full; Hard Rule 3 (Discord Developer Portal) is untouched. The control that replaces
+  hand-writing: ROADMAP Phase 6 criterion 5 stands unchanged — the bot survives a reboot as its own
+  systemd service, independent of the collector, and the author can explain which intents it
+  requests and why none of them are privileged — and closes only when the author installs the unit
+  themselves and writes that explanation into `06-UAT.md` in their own words, unaided. This
+  narrows Phase 2 D-12's "including when asked" clause for unit files only; `deploy/creatorpulse.service`
+  and `deploy/creatorpulse.timer` remain transcriptions of the author's own hand-written files, not
+  generated ones — only `deploy/creatorpulse-bot.service` is agent-drafted, and it is the only file
+  that needed this exception. Rejected: waiting for the author to hand-write the second unit — the
+  clock does not allow it and Phase 6 needs the file to be diffable now. Cross-reference:
+  `.claude/CLAUDE.md`'s 2026-08-06 rule-1 amendment.
+  — **Reversibility:** costly — see `.claude/CLAUDE.md`'s amendment for the same reasoning: a
+  published, dated rule relaxation is awkward to rescind once the exception has already been used
+  to land a committed file.
 
 </decisions>
 
