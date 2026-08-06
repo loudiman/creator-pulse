@@ -138,7 +138,12 @@ def main(argv: list[str] | None = None) -> int:
     collect_parser.add_argument("--config", type=Path, default=None)
 
     subparsers.add_parser("sync")
-    subparsers.add_parser("bot")
+    bot_parser = subparsers.add_parser("bot")
+    bot_parser.add_argument(
+        "--digest-now",
+        action="store_true",
+        help="post one digest immediately after connecting, then keep the schedule",
+    )
 
     args = parser.parse_args(argv)
 
@@ -153,8 +158,12 @@ def main(argv: list[str] | None = None) -> int:
         _, db_path = resolve_paths()
         return run_sync(db_path)
     if args.command == "bot":
-        logger.warning("bot is not implemented yet; Phase 6 fills it in")
-        return 3
+        _, db_path = resolve_paths()
+        # Imported here, not at module top: the collector and sync commands must not pull
+        # discord.py into their import graph, and a top-level import would do exactly that.
+        from creatorpulse.bot import run_bot
+
+        return run_bot(db_path, digest_now=args.digest_now)
     return 1
 
 

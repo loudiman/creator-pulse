@@ -46,6 +46,58 @@ def resolve_paths() -> tuple[Path, Path]:
     return config_path.resolve(), db_path.resolve()
 
 
+class DiscordConfigError(Exception):
+    """Raised when a required Discord env var is missing or fails to parse (D-19). The
+    message names the variable, never the value — the token and webhook URL must never
+    appear in an error message or a log line (T-06-02)."""
+
+
+@dataclass(frozen=True, slots=True)
+class DiscordConfig:
+    bot_token: str
+    channel_id: int
+    guild_id: int
+    webhook_url: str
+
+
+def resolve_discord_config() -> DiscordConfig:
+    """Resolve the four Discord env vars, failing loudly before anything connects (D-19).
+
+    Diverges deliberately from resolve_sheets_config()'s return-None shape: D-19 requires the
+    failure to name the offending variable and stop the process before it reaches Discord, so
+    each missing or malformed variable raises its own DiscordConfigError rather than letting
+    the caller guess which of four fields was the problem. The empty-string-is-unset
+    convention is unchanged from resolve_sheets_config()."""
+    token = os.environ.get("DISCORD_BOT_TOKEN") or None
+    channel_raw = os.environ.get("DISCORD_CHANNEL_ID") or None
+    guild_raw = os.environ.get("DISCORD_GUILD_ID") or None
+    webhook = os.environ.get("DISCORD_WEBHOOK_URL") or None
+
+    if not token:
+        raise DiscordConfigError("DISCORD_BOT_TOKEN is not set")
+    if not channel_raw:
+        raise DiscordConfigError("DISCORD_CHANNEL_ID is not set")
+    if not guild_raw:
+        raise DiscordConfigError("DISCORD_GUILD_ID is not set")
+    if not webhook:
+        raise DiscordConfigError("DISCORD_WEBHOOK_URL is not set")
+
+    try:
+        channel_id = int(channel_raw)
+    except ValueError as exc:
+        raise DiscordConfigError(
+            f"DISCORD_CHANNEL_ID must be an integer, got {channel_raw!r}"
+        ) from exc
+    try:
+        guild_id = int(guild_raw)
+    except ValueError as exc:
+        raise DiscordConfigError(f"DISCORD_GUILD_ID must be an integer, got {guild_raw!r}") from exc
+
+    return DiscordConfig(
+        bot_token=token, channel_id=channel_id, guild_id=guild_id, webhook_url=webhook
+    )
+
+
 def resolve_sheets_config() -> tuple[str, Path] | None:
     """Resolve the two Sheets env vars (D-09). No default exists for either — unlike
     resolve_paths()'s repo-relative fallback, a missing spreadsheet key has no sensible guess.
