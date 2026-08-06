@@ -1,0 +1,9 @@
+[Unit]
+Description=CreatorPulse Daily Schedule (08:00 Asia/Manila)
+
+[Timer]
+OnCalendar=*-*-* 08:00:00 Asia/Manila
+Persistent=true
+
+[Install]
+WantedBy=timers.target

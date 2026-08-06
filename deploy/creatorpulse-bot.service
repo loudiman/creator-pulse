@@ -1,0 +1,17 @@
+[Unit]
+Description=CreatorPulse Discord Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=creatorpulse
+WorkingDirectory=/home/creatorpulse/creator-pulse
+EnvironmentFile=/etc/creatorpulse/creatorpulse.env
+Environment="HOME=/home/creatorpulse"
+Environment="CREATORPULSE_DB=/var/lib/creatorpulse/creatorpulse.db"
+ExecStart=/home/creatorpulse/creator-pulse/.venv/bin/creatorpulse bot
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
