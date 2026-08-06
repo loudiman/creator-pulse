@@ -142,12 +142,57 @@ None yet.
 - **Phase 4, unknowable in advance:** TikTok public page structure and selectors need live inspection. Budget for at least one iteration against saved HTML fixtures. Likely needs `--research-phase 4`.
 - **Ownership constraint, all phases (AMENDED 2026-08-06, twice):** Phase 2 is human-built except `.service`/`.timer` files, which the agent may now write into `deploy/` — see `.claude/CLAUDE.md` "Amendment 2026-08-06 — rule 1 narrowed for `deploy/` unit files" and 06-CONTEXT.md D-21. Phase 5 is `mixed` (Apps Script written by the agent, Phase 5 D-01). Still binding in full: SSH config, non-root user setup, UFW rules, `docs/deploy.md`, and all Discord Developer Portal configuration. Both amendments are dated, scoped exceptions granted on the clock, not a general relaxation.
 - **Hard deadline:** ship Wed 5 Aug 2026, interview Thu 6 Aug 8:00pm PHT. Roughly one phase per day, part-time. Cut order is fixed in ROADMAP.md — slash commands, then TikTok, then History tab. Never cut Phases 2, 5, or 6.
-- Phase 3 human-observed real-data run outstanding (ROADMAP Definition of Green) — needs droplet SSH access and real YOUTUBE_API_KEY/TWITCH_CLIENT_ID/SECRET; see 03-UAT.md Gaps
-- Phase 3 PARTIAL: 5/5 must-haves verified in code, all 4 green gates pass, but ROADMAP's human-observed real-data run is outstanding. 03-UAT.md holds 5 PENDING entries with close-later commands. Needs droplet /etc/creatorpulse/creatorpulse.env filled (YOUTUBE_API_KEY available now; Twitch blocked on 2FA).
+- **RESOLVED 2026-08-06 — Phase 3's human-observed real-data run has happened.** The droplet's
+  `/var/lib/creatorpulse/creatorpulse.db` holds real collected YouTube rows for **2026-08-05 and
+  2026-08-06**, written by the 08:00 Manila timer (latest `runs` row: started `2026-08-06T00:00:07Z`,
+  3 rows written, 0 failures). Evidence gathered while preparing the Phase 6 tracer; the database was
+  copied to the dev machine for local work. The prior two entries claiming this was outstanding were
+  stale and have been replaced by this one. **03-UAT.md's five PENDING entries are not closed by this
+  note** — each carries its own per-entry evidence requirement and must be closed against its own
+  close-later command, not against this summary. Twitch remains blocked on 2FA (SRC-02).
+- **Data-shape findings from that database, relevant to Phase 6 execution (recorded 2026-08-06):**
+  - **2026-08-04's three rows are synthetic seed data, not collected metrics** — round figures
+    (1,095,000,000 / 895,000,000 / 8,100,000,000 followers 13,000,000), all three creators, no
+    `mkbhd`. They are the seed rows this file already records as deliberately left in place. **Real
+    collected history begins 2026-08-05**, so the project has two days of real data, not three. A
+    consequence to expect and not misread: xqc's followers appear to "drop" 13,000,000 → 2,500,000
+    between 08-04 and 08-05 — that is the seed giving way to the real number, not a metric movement.
+  - **08-05 and 08-06 `views` are byte-identical for all three real creators** (kaicenat 439,535,493;
+    pokimane 96,004,740; xqc 1,903,001,878). YouTube's `viewCount` is served from a cache that had not
+    rolled over between the two runs. This is a property of the data source, not a collector bug — and
+    `0` correctly means "the platform reported the same number", never "no data" (CLAUDE.md NULL-vs-0).
+  - **Therefore today's digest renders every delta as 0 and no ±20% flag can fire live (BOT-02).**
+    Decision: accept and record it. BOT-02 is proven by the four boundary unit tests plan 06-03
+    specifies (either side of ±20%), and `06-UAT.md` must state plainly that no flag fired live
+    because real data did not move — not claim a live proof that did not happen. A forced proof
+    (temporarily editing one 08-05 `views` value, watching the flag render, restoring) remains
+    available for the interview demo and must be labelled a forced proof, exactly as Phase 5 D-08
+    labelled the forced watchdog run.
+  - **`mkbhd` still renders `—` and is unaffected** — its latest row is 08-05 with no 08-04 baseline
+    of its own, so it is live proof of DATA-04 and D-12 regardless of the zero deltas.
 - Phase 5 PARTIAL: 05-UAT.md entry 7 (ROADMAP criterion 5, author's unaided onEdit/webhook explanation) PENDING by author decision at ~06:00 Asia/Manila 2026-08-06 to proceed to Phase 6; interview is 20:00 same day. Close-later step in 05-UAT.md. Also PENDING (non-gating): criterion 4's natural 09:00 Manila trigger fire, bonus evidence only.
 - `docs/deploy.md` (Phase 2 D-13) still absent from the repo. Human-owned and untouched by the rule-1 amendment — the agent must not draft or outline it. Phase 7 work.
 - `deploy/creatorpulse-bot.service` is committed but must NOT be installed or enabled yet: `creatorpulse bot` is still the stub at `src/creatorpulse/cli.py:155` returning exit 3, and `Restart=on-failure` would produce a 10-second restart loop. Install after Phase 6 executes.
 - Local branch is 25+ commits ahead of `origin/main` and unpushed. Also blocks worktree isolation (`origin/HEAD` unresolved → quick tasks auto-degrade to sequential).
+- **Dev-machine credentials are set at Windows User scope (2026-08-06), not session scope:**
+  `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL`, `DISCORD_CHANNEL_ID`, `DISCORD_GUILD_ID`,
+  `YOUTUBE_API_KEY`. They persist in the user registry until removed and are read by any new shell —
+  this is what makes plan 06-01's checkpoint runnable locally. `CREATORPULSE_DB` is deliberately
+  unset locally so the repo-root `creatorpulse.db` (gitignored, real data copied from the droplet)
+  is used. Remove with:
+  `'DISCORD_BOT_TOKEN','DISCORD_WEBHOOK_URL','DISCORD_CHANNEL_ID','DISCORD_GUILD_ID','YOUTUBE_API_KEY' | ForEach-Object { [Environment]::SetEnvironmentVariable($_,$null,'User') }`
+- **Discord credentials verified live 2026-08-06, and they cross-check:** bot token authenticates as
+  `Creator Pulse Bot#6328` (id 1534687081308225556); the bot is a member of guild
+  `Creator Pulse Discord` matching `DISCORD_GUILD_ID`; and the webhook's own `channel_id` and
+  `guild_id` match `DISCORD_CHANNEL_ID` / `DISCORD_GUILD_ID`. That last check proves the bot's digest
+  (bot token → channel) and the collector's alert (webhook) reach the **same** channel — Phase 6 D-02's
+  split transport and Phase 5 D-16's one-channel rule are verified against live credentials, not
+  assumed. No message was posted; a `GET` on a webhook returns metadata only.
+- **BOT-07 completed by hand 2026-08-06** (Hard Rule 3, human-owned): zero privileged intents
+  (Presence, Server Members, Message Content all OFF), Public Bot OFF, Install Link None, Guild
+  Install context ON, and the bot's guild role stripped of Administrator down to View Channel +
+  Send Messages. This is the evidence for ROADMAP Phase 6 criterion 5's "why none of them are
+  privileged" half; the author's own written explanation still has to land in `06-UAT.md` unaided.
 
 ### Quick Tasks Completed
 

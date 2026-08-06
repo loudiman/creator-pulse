@@ -3,8 +3,8 @@ status: passed_with_caveats
 phase: 03-collector-core-api-sources
 source: [03-CONTEXT.md]
 started: 2026-08-05T00:00:00Z
-updated: "2026-08-05T01:20:00Z"
-blocked_reason: "RESOLVED 2026-08-05T01:07Z. YOUTUBE_API_KEY was provisioned into /etc/creatorpulse/creatorpulse.env and the author ran the collector on creatorpulse-vps. All five entries now carry real observed evidence: 2 passed outright, 3 passed with a named caveat. No entry is fabricated and no caveat is glossed. The three residual halves — prior-day immutability, the Twitch followers instance, and cross-process concurrency — each close on their own schedule with no work outstanding today. See ## Summary."
+updated: "2026-08-06T07:55:00Z"
+blocked_reason: "RESOLVED 2026-08-05T01:07Z. YOUTUBE_API_KEY was provisioned into /etc/creatorpulse/creatorpulse.env and the author ran the collector on creatorpulse-vps. All five entries carry real observed evidence. As of 2026-08-06: 3 passed outright, 2 passed with a named caveat. No entry is fabricated and no caveat is glossed. Entry 2's prior-day half closed on schedule when the 2026-08-06T00:00:07Z timer run produced a second real calendar day, exactly as its close-later command predicted. The two residual halves — the Twitch followers instance (blocked on SRC-02) and cross-process concurrency — remain open on their own schedules. See ## Summary."
 ---
 
 ## Current Test
@@ -78,9 +78,9 @@ expected: A single `sqlite3` query, run before and after a same-day re-run of th
 
 why_human: Requires a real database with at least one prior day's history and a real same-day re-run; cannot be reproduced from a fixture-only test suite.
 
-not_closed_reason: PARTIAL 2026-08-05T01:10Z. The same-day idempotency half is closed on real data. The prior-day half cannot be closed until a second calendar day of history exists — 2026-08-05 is the first day this database ever held rows, so there is no yesterday to leave untouched. Closes on its own when the 08:00 Asia/Manila timer fires 2026-08-06 (00:00 UTC), with no further action needed.
+not_closed_reason: CLOSED 2026-08-06T07:5xZ. Half A closed 2026-08-05 on real data. Half B was blocked only on a second calendar day existing; the 08:00 Asia/Manila timer fired 2026-08-06T00:00:07Z and the close-later command below was run by the author. Three distinct `metric_date` values now coexist and the 08-06 run wrote only into its own date. See the HALF B addendum for the one thing this evidence does not cover.
 
-result: passed_with_caveat
+result: passed
 
 evidence: |
     Observed by the author on creatorpulse-vps, 2026-08-05.
@@ -118,6 +118,46 @@ evidence: |
         sqlite3 -header -column /var/lib/creatorpulse/creatorpulse.db \
           "select metric_date, count(*) from metrics group by metric_date order by 1;"
         # expect two dates, and 2026-08-05's counts unchanged from today
+
+    HALF B — ADDENDUM 2026-08-06. NOW CLOSED.
+
+    The timer fired 2026-08-06T00:00:07Z. The close-later command above was run by the
+    author on creatorpulse-vps:
+
+    $ sqlite3 /var/lib/creatorpulse/creatorpulse.db \
+        "SELECT metric_date, COUNT(*) FROM metrics GROUP BY metric_date ORDER BY metric_date;"
+    2026-08-04|3
+    2026-08-05|4
+    2026-08-06|3
+
+    $ # latest runs row, read from the same database:
+    $ # started 2026-08-06T00:00:07.529924+00:00, finished ...:07.958346+00:00,
+    $ # rows_written 3, failure_count 0
+
+    Three dates coexist. The 08-06 run reports rows_written=3 and 2026-08-06 holds exactly
+    3 rows — so that run inserted only into its own date and added nothing to 08-05 or
+    08-04. This is the structural guarantee showing up in real data: metric_date is
+    computed once per run in UTC (RUN-05) and is part of the UNIQUE key, so a run dated
+    2026-08-06 cannot address a 2026-08-05 row at all. The unit test
+    tests/test_db.py::test_upsert_different_date_does_not_touch_prior_row asserts the
+    byte-level version of the same claim and is green.
+
+    TWO OBSERVATIONS RECORDED RATHER THAN GLOSSED:
+
+    (a) What this evidence does NOT cover: no byte-level before/after snapshot of 08-05's
+        field values was captured immediately either side of the 08-06 run. The claim rests
+        on the row-count arithmetic above plus the structural argument and the green unit
+        test, not on a field-by-field diff of live rows. Stating it because "untouched" in
+        the criterion's own wording is stronger than "not added to", and the distinction
+        should be visible to anyone auditing this entry.
+
+    (b) 2026-08-05 shows 4 rows here but 3 in the Half A evidence above. That is not drift
+        from the 08-06 run — it is the `mkbhd` row, added later on 08-05 by the entry 3
+        bogus-handle test (closed 2026-08-05T01:17Z, after Half A's 01:10Z snapshot).
+        `mkbhd` was subsequently removed from creators.yaml, leaving a deliberate orphan
+        row that is itself the live proof of DATA-04. Separately, 2026-08-04's three rows
+        are synthetic seed data backdated after this entry's original evidence was written
+        — real collected history begins 2026-08-05.
 
 ### 3. A source made to fail is logged with creator, source, and cause, counted in that run's `runs` row, and the remaining creators still complete
 
@@ -328,9 +368,10 @@ The three caveats, none of which is a defect and none of which needs work today:
 
 ## Gaps
 
-**Phase 3 closes PARTIAL as of 2026-08-05: automated coverage green, human-observed run
-outstanding.** Both gates in `03-05-PLAN.md`'s Definition of Green are distinct and this
-phase has closed only one of them:
+~~**Phase 3 closes PARTIAL as of 2026-08-05: automated coverage green, human-observed run
+outstanding.**~~ — **AMENDED 2026-08-06: both gates are now closed.** The two gates in
+`03-05-PLAN.md`'s Definition of Green are distinct, and the record below is kept in its
+original form with its correction attached rather than rewritten:
 
 1. **Automated coverage — CLOSED.** `ruff format --check .`, `ruff check .`, `mypy src/`
    (strict), and `pytest` all exit 0 (63 tests). The eight test names
@@ -343,13 +384,30 @@ phase has closed only one of them:
    `test_all_rows_from_one_run_share_metric_date`,
    `test_runs_row_written_on_crash`, `test_idempotent_rerun_same_day`
    (`tests/test_collector.py`).
-2. **Human-observed real-data run — OUTSTANDING.** ROADMAP's Definition of Green requires a
-   human-observed end-to-end run against real API data from Phase 3 onward, and no automated
-   check substitutes for it. This executor had no SSH access to the droplet and
-   `/etc/creatorpulse/creatorpulse.env` there still holds blank values, so none of the five
-   `03-UAT.md` entries above could be closed against real data. All five stay `pending`, each
-   carrying its own `not_closed_reason` and the exact commands that will close it — usable as
-   a checklist in one sitting once droplet access exists.
+2. ~~**Human-observed real-data run — OUTSTANDING.** This executor had no SSH access to the
+   droplet and `/etc/creatorpulse/creatorpulse.env` there still holds blank values, so none of
+   the five `03-UAT.md` entries above could be closed against real data. All five stay
+   `pending`.~~ — **STALE AS WRITTEN. Superseded 2026-08-05T01:07Z and again 2026-08-06.**
+
+   **Human-observed real-data run — CLOSED.** `YOUTUBE_API_KEY` was provisioned into
+   `/etc/creatorpulse/creatorpulse.env` and the author ran the collector on creatorpulse-vps
+   the same evening this paragraph was written; the frontmatter `blocked_reason` was updated
+   at 01:20Z but this paragraph was not, and it has been contradicting the frontmatter and the
+   five entries ever since. All five entries carry real observed evidence. **Nothing here is
+   pending.** Current tally: **3 passed outright, 2 passed with a named caveat.**
+
+   Closed since: entry 2's prior-day half, discharged 2026-08-06 by the
+   `2026-08-06T00:00:07Z` timer run producing a second real calendar day — its close-later
+   command was run and its output recorded in the entry's HALF B addendum.
+
+   Two named caveats remain, both open on their own schedule rather than on work outstanding:
+   the Twitch `followers` instance (entry 4, blocked on SRC-02's 2FA wall) and cross-process
+   read/write concurrency (entry 5, DATA-05's flagged assumption, deliberately not claimed on
+   inconclusive evidence).
+
+   **Phase 3's status is therefore no longer PARTIAL on account of the human gate.** Anyone
+   auditing this phase should read the five entries and this list, not the struck paragraph
+   above — it is kept visible rather than deleted so the correction itself is auditable.
 
 **SRC-02 (Twitch source) is separately deferred**, not merely a UAT gap: `03-03-PLAN.md` is
 written, reviewed, and left unexecuted because Twitch application registration is

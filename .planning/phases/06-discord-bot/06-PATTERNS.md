@@ -30,6 +30,7 @@
 import json
 import logging
 import sqlite3
+
 ...
 logger = logging.getLogger("creatorpulse")
 ```
@@ -53,6 +54,7 @@ from discord.ext import tasks
 
 MANILA = ZoneInfo("Asia/Manila")
 DIGEST_TIME = time(hour=8, minute=15, tzinfo=MANILA)
+
 
 class CreatorPulseBot(commands.Bot):
     @tasks.loop(time=DIGEST_TIME)
@@ -143,7 +145,10 @@ except Exception as exc:  # D-15 — one boundary per (creator, source) pair
     failure_count += 1
     logger.error(
         "fetch failed creator=%s source=%s cause=%s: %s",
-        creator.id, source_name, type(exc).__name__, str(exc),
+        creator.id,
+        source_name,
+        type(exc).__name__,
+        str(exc),
     )
     continue  # no cross-pair state, no short-circuit (D-15)
 ```
@@ -184,12 +189,19 @@ becomes a call into `bot.run_bot(db_path)` (or equivalent), following `run_colle
 ```python
 def _record(**overrides: Any) -> MetricRecord:
     base: dict[str, Any] = {
-        "creator_id": "c1", "source": "youtube", "metric_date": date(2026, 1, 1),
-        "followers": 100, "views": 200, "likes": None, "video_count": 5,
-        "is_live": None, "collected_at": datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC),
+        "creator_id": "c1",
+        "source": "youtube",
+        "metric_date": date(2026, 1, 1),
+        "followers": 100,
+        "views": 200,
+        "likes": None,
+        "video_count": 5,
+        "is_live": None,
+        "collected_at": datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC),
     }
     base.update(overrides)
     return MetricRecord(**base)
+
 
 def test_null_followers_renders_blank_and_zero_renders_zero(tmp_path: Path) -> None:
     conn = connect(tmp_path / "creatorpulse.db", create=True)

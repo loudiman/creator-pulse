@@ -242,11 +242,13 @@ import discord
 from discord.ext import commands
 
 intents = discord.Intents.default()  # no privileged intents needed — see Pitfall/Priority 1
-bot = commands.Bot(command_prefix="!", intents=intents)  # prefix unused, required by the constructor
+bot = commands.Bot(
+    command_prefix="!", intents=intents
+)  # prefix unused, required by the constructor
+
 
 @bot.tree.command(name="status", description="Report last run time, duration, and failure count")
-async def status(interaction: discord.Interaction) -> None:
-    ...
+async def status(interaction: discord.Interaction) -> None: ...
 ```
 Rejected: `discord.Client` + manually attached `CommandTree` — same end result, one extra line
 (`client.tree = app_commands.CommandTree(client)`), no offsetting benefit for this bot's shape.
@@ -444,7 +446,9 @@ def resolve_discord_config() -> DiscordConfig:
     except ValueError as exc:
         raise DiscordConfigError(f"DISCORD_GUILD_ID must be an integer, got {guild_raw!r}") from exc
 
-    return DiscordConfig(bot_token=token, channel_id=channel_id, guild_id=guild_id, webhook_url=webhook)
+    return DiscordConfig(
+        bot_token=token, channel_id=channel_id, guild_id=guild_id, webhook_url=webhook
+    )
 ```
 
 ### Digest task loop, guarded per Pitfall 1
