@@ -11,10 +11,9 @@ from typing import Any
 
 import pytest
 
-from creatorpulse import sheets
 from creatorpulse.bot import build_digest_text, format_percent, percent_change
 from creatorpulse.config import DiscordConfigError, resolve_discord_config
-from creatorpulse.db import connect, upsert_metric
+from creatorpulse.db import DELTA_PLACEHOLDER, connect, upsert_metric
 from creatorpulse.models import MetricRecord
 
 
@@ -189,8 +188,8 @@ def test_digest_text_renders_delta_placeholder_for_missing_and_zero_baseline(
     text = build_digest_text(conn, datetime(2026, 8, 5, 8, 15, tzinfo=UTC))
     by_creator = {line.split(" ", 1)[0]: line for line in text.splitlines()[1:]}
 
-    assert f"(Δ {sheets.DELTA_PLACEHOLDER})" in by_creator["no-baseline"]
-    assert f"(Δ {sheets.DELTA_PLACEHOLDER})" in by_creator["zero-baseline"]
+    assert f"(Δ {DELTA_PLACEHOLDER})" in by_creator["no-baseline"]
+    assert f"(Δ {DELTA_PLACEHOLDER})" in by_creator["zero-baseline"]
 
 
 def test_digest_text_on_empty_database_returns_an_explicit_message_not_an_empty_string(

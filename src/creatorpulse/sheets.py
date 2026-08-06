@@ -9,12 +9,13 @@ from pathlib import Path
 import gspread
 from gspread.utils import ValueInputOption
 
-from creatorpulse.db import LatestRow, fetch_latest_rows
+from creatorpulse.db import DELTA_PLACEHOLDER, LatestRow, fetch_latest_rows
 
 logger = logging.getLogger("creatorpulse")
 
 DASHBOARD_TAB = "Dashboard"
-DELTA_PLACEHOLDER = "—"  # em dash; 04-02 puts a real number beside it
+
+__all__ = ["DASHBOARD_TAB", "DELTA_PLACEHOLDER", "SheetNotShared", "SheetsKeyfileUnusable", "sync"]
 
 
 class SheetNotShared(Exception):

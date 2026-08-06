@@ -6,6 +6,12 @@ from pathlib import Path
 
 from creatorpulse.models import MetricRecord
 
+# Every surface that renders a metric shares this one em dash: the Sheet's Δ Views column and
+# the Discord digest. It lives here rather than in sheets.py so a reader of the database layer
+# never has to import the Google client to learn how "no comparison available" is spelled
+# (D-13's rationale, applied to the constant as well as to the query).
+DELTA_PLACEHOLDER = "—"
+
 SCHEMA_DDL = """
 CREATE TABLE IF NOT EXISTS metrics (
     creator_id    TEXT    NOT NULL,

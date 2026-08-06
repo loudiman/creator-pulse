@@ -2,19 +2,24 @@
 
 import logging
 import sqlite3
-from datetime import datetime, time
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import discord
 from discord.ext import commands, tasks
 
-from creatorpulse import db, sheets
+from creatorpulse import db
 from creatorpulse.config import DiscordConfig, resolve_discord_config
 
 logger = logging.getLogger("creatorpulse")
 
-MANILA = ZoneInfo("Asia/Manila")
+# A fixed offset rather than zoneinfo.ZoneInfo("Asia/Manila"): the Philippines has not observed
+# daylight saving since 1978, so this offset is constant and needs no timezone database to
+# confirm it. ZoneInfo would drag in the tzdata package on Windows (which ships no IANA
+# database) purely to look up a fact that does not change — a dependency the no-new-dependencies
+# rule does not justify. If a creator in a DST region is ever tracked, this becomes ZoneInfo and
+# tzdata becomes a real dependency; until then it is arithmetic.
+MANILA = timezone(timedelta(hours=8), "Asia/Manila")
 # D-03's three-schedule ordering: 08:00 collector (systemd timer) -> 08:15 digest (this loop)
 # -> 09:00 off-box watchdog (Apps Script trigger).
 DIGEST_TIME = time(hour=8, minute=15, tzinfo=MANILA)
@@ -41,8 +46,8 @@ def format_percent(pct: float) -> str:
 def build_digest_text(conn: sqlite3.Connection, now: datetime) -> str:
     """Every (creator, source) pair's latest snapshot, sorted by |percent change| descending,
     with pairs that have no computable percent sorted last (D-11/D-12). Pure and
-    fixture-testable — the only Discord-adjacent thing imported here is the shared
-    DELTA_PLACEHOLDER constant, not the gateway."""
+    fixture-testable — it reaches only into db.py, so nothing in the digest path imports the
+    gateway or the Google client."""
     header = f"CreatorPulse digest — {now.date().isoformat()}"
     rows = db.fetch_latest_rows(conn)
     if not rows:
@@ -62,9 +67,9 @@ def build_digest_text(conn: sqlite3.Connection, now: datetime) -> str:
 
     lines = [header]
     for creator_id, source, views, prev_views, pct in sorted(computed, key=_sort_key):
-        views_text = f"{views:,}" if views is not None else sheets.DELTA_PLACEHOLDER
+        views_text = f"{views:,}" if views is not None else db.DELTA_PLACEHOLDER
         if pct is None:
-            delta_text = sheets.DELTA_PLACEHOLDER
+            delta_text = db.DELTA_PLACEHOLDER
         else:
             # pct is not None only when both sides are ints and prev_views != 0.
             assert views is not None and prev_views is not None
