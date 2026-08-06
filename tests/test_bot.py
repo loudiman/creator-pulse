@@ -1,20 +1,26 @@
-"""Tests for bot.py's pure formatters and config.py's resolve_discord_config() — against a
-temp SQLite database, following tests/test_sheets.py's pattern one-for-one. No discord.py is
-imported here and nothing here is mocked; the gateway, the task loop, and command
-registration are untested by design (D-20) and that gap is recorded in 06-VALIDATION.md
-rather than papered over.
+"""Tests for bot.py's pure formatters, config.py's resolve_discord_config(), and cli.py's
+D-08/D-09 failure-alert path (build_alert_text, _post_alert, and their two call sites in
+run_collect) — against a temp SQLite database, following tests/test_sheets.py's pattern
+one-for-one. No discord.py is imported here and nothing here is mocked beyond requests.post
+and sheets.sync; the gateway, the task loop, and command registration are untested by design
+(D-20) and that gap is recorded in 06-VALIDATION.md rather than papered over.
 """
 
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+import requests
 
+from creatorpulse import collector
 from creatorpulse.bot import build_digest_text, format_percent, percent_change
+from creatorpulse.cli import _post_alert, build_alert_text, run_collect
 from creatorpulse.config import DiscordConfigError, resolve_discord_config
 from creatorpulse.db import DELTA_PLACEHOLDER, connect, upsert_metric
-from creatorpulse.models import MetricRecord
+from creatorpulse.models import MetricRecord, RunFailure
+from creatorpulse.sheets import SheetNotShared
 
 
 def _record(**overrides: Any) -> MetricRecord:
@@ -201,3 +207,202 @@ def test_digest_text_on_empty_database_returns_an_explicit_message_not_an_empty_
 
     assert text != ""
     assert "No rows recorded yet" in text
+
+
+# --- build_alert_text() ------------------------------------------------------------------
+
+_TWO_FAILURES = (
+    RunFailure(creator_id="c1", source="youtube", cause="ValueError", message="boom"),
+    RunFailure(creator_id="c2", source="youtube", cause="KeyError", message="missing"),
+)
+_ONE_FAILURE = (RunFailure(creator_id="c1", source="youtube", cause="ValueError", message="boom"),)
+
+
+def test_alert_text_two_failures_names_both_creators_sources_causes_messages() -> None:
+    text = build_alert_text(_TWO_FAILURES)
+
+    assert "c1" in text and "c2" in text
+    assert text.count("youtube") == 2
+    assert "ValueError" in text and "boom" in text
+    assert "KeyError" in text and "missing" in text
+
+
+def test_alert_text_one_failure_header_says_one_not_two() -> None:
+    text = build_alert_text(_ONE_FAILURE)
+
+    header = text.splitlines()[0]
+    assert "1" in header
+    assert "2" not in header
+
+
+# --- run_collect() alert call sites (D-08/D-09) -------------------------------------------
+
+_CREATORS_YAML = """\
+creators:
+  - id: c1
+    name: C1
+    sources:
+      youtube: "@handle1"
+"""
+
+
+def _write_creators_yaml(tmp_path: Path) -> Path:
+    path = tmp_path / "creators.yaml"
+    path.write_text(_CREATORS_YAML, encoding="utf-8")
+    return path
+
+
+def _stub_sheets_sync_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make run_collect's Sheets step a no-op success, so alert-path assertions about the
+    D-08 call site are not entangled with the D-09 call site."""
+    monkeypatch.setenv("CREATORPULSE_SHEET_ID", "fake-sheet-id")
+    monkeypatch.setenv("CREATORPULSE_SHEETS_KEYFILE", str(Path("fake-keyfile.json").resolve()))
+    monkeypatch.setattr("creatorpulse.sheets.sync", lambda conn, sheet_id, keyfile: 0)
+
+
+def _fake_204_response() -> Mock:
+    resp = Mock(spec=requests.Response)
+    resp.status_code = 204
+    resp.text = ""
+    return resp
+
+
+def test_run_collect_with_one_failure_calls_alert_path_exactly_once_and_still_returns_0(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.example/webhook")
+    _stub_sheets_sync_success(monkeypatch)
+
+    def fail_fetch(identifier: str, metric_date: date) -> MetricRecord:
+        raise ValueError("boom")
+
+    monkeypatch.setitem(collector.FETCHERS, "youtube", fail_fetch)
+
+    posts: list[str] = []
+
+    def fake_post(url: str, json: dict[str, Any], timeout: int) -> Mock:
+        posts.append(json["content"])
+        return _fake_204_response()
+
+    monkeypatch.setattr("creatorpulse.cli.requests.post", fake_post)
+
+    exit_code = run_collect(_write_creators_yaml(tmp_path), tmp_path / "creatorpulse.db")
+
+    assert exit_code == 0
+    assert len(posts) == 1
+    assert "1 failure" in posts[0]
+
+
+def test_run_collect_with_zero_failures_does_not_call_the_alert_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.example/webhook")
+    _stub_sheets_sync_success(monkeypatch)
+
+    def ok_fetch(identifier: str, metric_date: date) -> MetricRecord:
+        return MetricRecord(
+            creator_id="",
+            source="youtube",
+            metric_date=date(2026, 1, 1),
+            followers=1,
+            views=2,
+            likes=None,
+            video_count=3,
+            is_live=None,
+            collected_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+
+    monkeypatch.setitem(collector.FETCHERS, "youtube", ok_fetch)
+
+    posts: list[str] = []
+
+    def fake_post(url: str, json: dict[str, Any], timeout: int) -> Mock:
+        posts.append(json["content"])
+        return _fake_204_response()
+
+    monkeypatch.setattr("creatorpulse.cli.requests.post", fake_post)
+
+    exit_code = run_collect(_write_creators_yaml(tmp_path), tmp_path / "creatorpulse.db")
+
+    assert exit_code == 0
+    assert posts == []
+
+
+def test_post_alert_with_webhook_url_unset_logs_warning_naming_that_variable_and_returns(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.delenv("DISCORD_WEBHOOK_URL", raising=False)
+
+    with caplog.at_level("WARNING", logger="creatorpulse"):
+        _post_alert("some alert text")  # must not raise
+
+    assert any("DISCORD_WEBHOOK_URL" in r.getMessage() for r in caplog.records)
+
+
+def test_post_alert_whose_post_raises_connection_error_logs_and_returns_without_raising(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.example/webhook")
+
+    def raise_connection_error(url: str, json: dict[str, Any], timeout: int) -> requests.Response:
+        raise requests.ConnectionError("no route to host")
+
+    monkeypatch.setattr("creatorpulse.cli.requests.post", raise_connection_error)
+
+    with caplog.at_level("ERROR", logger="creatorpulse"):
+        _post_alert("some alert text")  # must not raise
+
+    assert any("alert POST raised" in r.getMessage() for r in caplog.records)
+
+
+def test_run_collect_sheets_failure_and_broken_webhook_still_propagates_sheet_not_shared(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", "https://discord.example/webhook")
+    monkeypatch.setenv("CREATORPULSE_SHEET_ID", "fake-sheet-id")
+    monkeypatch.setenv("CREATORPULSE_SHEETS_KEYFILE", str(Path("fake-keyfile.json").resolve()))
+
+    def ok_fetch(identifier: str, metric_date: date) -> MetricRecord:
+        return MetricRecord(
+            creator_id="",
+            source="youtube",
+            metric_date=date(2026, 1, 1),
+            followers=1,
+            views=2,
+            likes=None,
+            video_count=3,
+            is_live=None,
+            collected_at=datetime(2026, 1, 1, tzinfo=UTC),
+        )
+
+    monkeypatch.setitem(collector.FETCHERS, "youtube", ok_fetch)
+
+    def raise_sheet_not_shared(conn: Any, sheet_id: str, keyfile: Path) -> int:
+        raise SheetNotShared("not shared")
+
+    monkeypatch.setattr("creatorpulse.sheets.sync", raise_sheet_not_shared)
+
+    def raise_connection_error(url: str, json: dict[str, Any], timeout: int) -> requests.Response:
+        raise requests.ConnectionError("webhook is also down")
+
+    monkeypatch.setattr("creatorpulse.cli.requests.post", raise_connection_error)
+
+    with pytest.raises(SheetNotShared):
+        run_collect(_write_creators_yaml(tmp_path), tmp_path / "creatorpulse.db")
+
+
+def test_post_alert_never_logs_the_webhook_url_value(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    webhook_url = "https://discord.example/webhook/secret-token"
+    monkeypatch.setenv("DISCORD_WEBHOOK_URL", webhook_url)
+
+    def raise_connection_error(url: str, json: dict[str, Any], timeout: int) -> requests.Response:
+        raise requests.ConnectionError("no route to host")
+
+    monkeypatch.setattr("creatorpulse.cli.requests.post", raise_connection_error)
+
+    with caplog.at_level("DEBUG", logger="creatorpulse"):
+        _post_alert("some alert text")
+
+    assert all(webhook_url not in r.getMessage() for r in caplog.records)
