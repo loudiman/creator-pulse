@@ -48,15 +48,19 @@ Task IDs are filled in by the planner. Requirement→behavior mapping is fixed h
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 1 | — (D-13 refactor) | — | N/A | unit | `pytest tests/test_sheets.py tests/test_db.py -x` | ✅ | ⬜ pending |
-| TBD | TBD | 1 | — (D-06 schema) | — | N/A | unit | `pytest tests/test_db.py tests/test_collector.py -x` | ✅ | ⬜ pending |
-| TBD | TBD | 2 | BOT-01 | — | N/A | unit | `pytest tests/test_bot.py -k digest -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | BOT-02 | — | N/A | unit | `pytest tests/test_bot.py -k flag -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 2 | BOT-03 | T-06 token-leak | Alert text names the creator/source/cause; never the token | unit | `pytest tests/test_bot.py -k alert -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 3 | BOT-04 | T-06 SQLi | `WHERE creator_id = ?` bound, never f-string interpolated | unit | `pytest tests/test_bot.py -k creator -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 3 | BOT-05 | — | N/A | unit | `pytest tests/test_bot.py -k status -x` | ❌ W0 | ⬜ pending |
-| TBD | TBD | — | BOT-06 | — | Unit runs as `creatorpulse`, reads `EnvironmentFile` | manual | — | N/A | ⬜ pending |
-| TBD | TBD | — | BOT-07 | T-06 overprivilege | Zero privileged intents; View Channel + Send Messages only | manual | — | N/A | ✅ done 2026-08-06 |
+| 06-01 T1 | 06-01 | 1 | — (D-13 refactor) | — | N/A | unit | `pytest tests/test_sheets.py tests/test_db.py -x` | ✅ | ⬜ pending |
+| 06-01 T2 | 06-01 | 1 | BOT-01, BOT-06 | T-06-02, T-06-04, T-06-05 | Config errors name the variable, never the value; the digest loop body catches its own exceptions; `Intents.default()` only | unit | `pytest tests/test_bot.py -k "digest or config" -x` | ❌ W0 | ⬜ pending |
+| 06-01 T3 | 06-01 | 1 | BOT-01 | — | Human gate — a real digest in the real channel | manual | — | N/A | ⬜ pending |
+| 06-02 T1 | 06-02 | 2 | BOT-03 (D-06 schema) | T-06-08 | Alert count and `runs` row are built from the same result | unit | `pytest tests/test_db.py tests/test_collector.py -x` | ✅ | ⬜ pending |
+| 06-02 T2 | 06-02 | 2 | BOT-03 | T-06-03, T-06-06, T-06-07 | No log record holds the webhook URL; `allowed_mentions` suppresses pings; a failed POST never replaces the error in flight | unit | `pytest tests/test_bot.py -k alert -x` | ❌ W0 | ⬜ pending |
+| 06-03 T1 | 06-03 | 3 | BOT-02 | T-06-04, T-06-09 | Strict `>` at ±20% and at 26h, matching `Code.gs`; new reads sit inside the loop guard | unit | `pytest tests/test_bot.py -k "flag or stale" -x` | ❌ W0 | ⬜ pending |
+| 06-03 T2 | 06-03 | 3 | BOT-01 | T-06-01 | `WHERE run_id = ?` bound, never interpolated | unit | `pytest tests/test_bot.py -k "digest or failure" -x` | ❌ W0 | ⬜ pending |
+| 06-04 T1 | 06-04 | 4 | BOT-07 | T-06-02, T-06-05 | COVERAGE.md records the surface, never a credential; the three privileged intents each get their own opt-out row | doc | `test "$(grep -c '^\| capability \| decision \| reason \|$' .planning/phases/06-discord-bot/COVERAGE.md)" -eq 1` | ❌ W0 | ⬜ pending |
+| 06-04 T2 | 06-04 | 4 | BOT-06 | T-06-10 | No entry closed without traceable evidence; systemd install recorded as a human step, not performed | doc | `test "$(grep -c '^### ' .planning/phases/06-discord-bot/06-UAT.md)" -eq 5` | ❌ W0 | ⬜ pending |
+| 06-05 T1 | 06-05 | 4 | BOT-04 | T-06-01, T-06-02 | `WHERE creator_id = ?` bound, never f-string interpolated; no reply derives from configuration | unit | `pytest tests/test_bot.py -k creator -x` | ❌ W0 | ⬜ pending |
+| 06-05 T2 | 06-05 | 4 | BOT-05 | T-06-04, T-06-11 | Short-lived per-handler connection; guild membership is the access control, accepted | unit | `pytest tests/test_bot.py -k status -x` | ❌ W0 | ⬜ pending |
+| — | 06-04 | — | BOT-06 | — | Unit runs as `creatorpulse`, reads `EnvironmentFile` | manual | — | N/A | ⬜ pending |
+| — | 06-04 | — | BOT-07 | T-06-05 | Zero privileged intents; View Channel + Send Messages only | manual | — | N/A | ✅ done 2026-08-06 |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
