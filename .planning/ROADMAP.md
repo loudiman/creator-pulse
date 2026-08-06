@@ -335,7 +335,7 @@ Notes:
   4. `/creator <name>` returns that creator's current numbers and recent trend, and `/status` returns last run time, duration, rows written, and failure count — both answered from the database, in-channel
   5. The bot survives a reboot as its own systemd service, independent of the collector, and the author can explain which intents it requests and why none of them are privileged
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -352,7 +352,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 06-04-PLAN.md — Phase artifacts: `COVERAGE.md` for the bot and application-command surface, and `06-UAT.md` against the five criteria. Documents only, which is why it runs parallel to 06-05
+- [x] 06-04-PLAN.md — Phase artifacts: `COVERAGE.md` for the bot and application-command surface, and `06-UAT.md` against the five criteria. Documents only, which is why it runs parallel to 06-05
 - [x] 06-05-PLAN.md — `/creator` and `/status` (BOT-04, BOT-05). **Cut-order item 1 — nothing depends on this plan, and cutting it is deleting this one file (D-14)**
 
 Notes:
@@ -438,7 +438,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
 | 4. Playwright & Sheets | 4/4 | Complete    | 2026-08-06 |
 | 5. Apps Script | 3/3 | In Progress|  |
-| 6. Discord Bot | 4/5 | In Progress|  |
+| 6. Discord Bot | 5/5 | In Progress|  |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
 
 ---

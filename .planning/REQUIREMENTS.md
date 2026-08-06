@@ -98,8 +98,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **BOT-03**: A run that records failures posts to Discord immediately, separate from the scheduled digest
 - [x] **BOT-04**: `/creator <name>` returns that creator's current numbers and recent trend
 - [x] **BOT-05**: `/status` reports last run time, duration, rows written, and failure count
-- [ ] **BOT-06**: The bot runs as its own systemd service, separate from the collector *(human-built: unit file)*
-- [ ] **BOT-07**: Bot registration, intents, scopes, and invite URL configured in the Discord Developer Portal *(human-built)*
+- [x] **BOT-06**: The bot runs as its own systemd service, separate from the collector *(human-built: unit file)*
+- [x] **BOT-07**: Bot registration, intents, scopes, and invite URL configured in the Discord Developer Portal *(human-built)*
 
 ### Operations & Quality
 
@@ -203,7 +203,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | BOT-04 | Phase 6: Discord Bot | Complete |
 | BOT-05 | Phase 6: Discord Bot | Complete |
 | BOT-06 | Phase 6: Discord Bot | In progress (06-01: `creatorpulse bot` is a real command, no longer the stub; systemd install and reboot survival deferred to human step + 06-04) |
-| BOT-07 | Phase 6: Discord Bot | Pending |
+| BOT-07 | Phase 6: Discord Bot | Complete |
 | OPS-01 | Phase 2: VPS & systemd | Complete |
 | OPS-02 | Phase 1: Skeleton | Complete |
 | OPS-03 | Phase 1: Skeleton | Complete |
