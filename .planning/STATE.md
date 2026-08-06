@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 06
 current_phase_name: discord-bot
 status: executing
-stopped_at: Completed 06-01-PLAN.md code tasks; Task 3 human checkpoint PENDING
-last_updated: "2026-08-06T08:18:24.464Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-08-06T08:52:16.678Z"
 last_activity: 2026-08-06
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-29)
 ## Current Position
 
 Phase: 06 (discord-bot) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-08-06 — Phase 06 execution started
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Progress: [████████░░] 79%
 | Phase 05 P02 | 55min | 3 tasks | 2 files |
 | Phase 05 P03 | 20min | 1 tasks | 3 files |
 | Phase 06 P01 | 17min | 2 tasks | 7 files |
+| Phase 06 P02 | 8min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,8 @@ Settled before Phase 1, do not re-litigate:
 - [Phase ?]: 06-01: D-13 moved LATEST_ROWS_SQL/LatestRow/fetch_latest_rows to db.py alone, own commit, gate green before Task 2
 - [Phase ?]: 06-01: bot.py imports sheets.DELTA_PLACEHOLDER per plan text/acceptance criteria — pulls gspread into bot process import graph, narrower than 06-CONTEXT's D-13 rationale; flagged not resolved
 - [Phase ?]: 06-01: tzdata installed into .venv only (not pyproject.toml) to unblock zoneinfo Asia/Manila on Windows dev machine lacking system tz database; VPS is Linux with system tzdata, zero production impact
+- [Phase ?]: cli.py owns build_alert_text/_post_alert (not bot.py) so the collector never imports discord.py
+- [Phase ?]: D-08/D-09 alert-path tests mock sheets.sync as a no-op to keep the two call sites independently testable
 
 ### Pending Todos
 
@@ -223,6 +226,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T08:18:24.397Z
-Stopped at: Completed 06-01-PLAN.md code tasks; Task 3 human checkpoint PENDING
+Last session: 2026-08-06T08:52:16.645Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None

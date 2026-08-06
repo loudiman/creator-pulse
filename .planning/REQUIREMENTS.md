@@ -95,7 +95,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **BOT-01**: Bot posts a daily digest listing top movers and any failures from that run
 - [ ] **BOT-02**: Digest flags any creator whose day-over-day delta exceeds ±20%
-- [ ] **BOT-03**: A run that records failures posts to Discord immediately, separate from the scheduled digest
+- [x] **BOT-03**: A run that records failures posts to Discord immediately, separate from the scheduled digest
 - [ ] **BOT-04**: `/creator <name>` returns that creator's current numbers and recent trend
 - [ ] **BOT-05**: `/status` reports last run time, duration, rows written, and failure count
 - [ ] **BOT-06**: The bot runs as its own systemd service, separate from the collector *(human-built: unit file)*
@@ -199,7 +199,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SCRIPT-04 | Phase 5: Apps Script | Complete |
 | BOT-01 | Phase 6: Discord Bot | In progress (06-01 tracer landed; failures/digest gaps close in 06-02/06-03; Task 3 live checkpoint pending) |
 | BOT-02 | Phase 6: Discord Bot | Pending |
-| BOT-03 | Phase 6: Discord Bot | Pending |
+| BOT-03 | Phase 6: Discord Bot | Complete |
 | BOT-04 | Phase 6: Discord Bot | Pending |
 | BOT-05 | Phase 6: Discord Bot | Pending |
 | BOT-06 | Phase 6: Discord Bot | In progress (06-01: `creatorpulse bot` is a real command, no longer the stub; systemd install and reboot survival deferred to human step + 06-04) |

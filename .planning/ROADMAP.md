@@ -335,7 +335,7 @@ Notes:
   4. `/creator <name>` returns that creator's current numbers and recent trend, and `/status` returns last run time, duration, rows written, and failure count — both answered from the database, in-channel
   5. The bot survives a reboot as its own systemd service, independent of the collector, and the author can explain which intents it requests and why none of them are privileged
 
-**Plans**: 1/5 plans executed
+**Plans**: 2/5 plans executed
 
 Plans:
 **Wave 1**
@@ -344,7 +344,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 06-02-PLAN.md — The `run_failures` table, the collector accumulating failure detail, and the two webhook alert call sites (BOT-03)
+- [x] 06-02-PLAN.md — The `run_failures` table, the collector accumulating failure detail, and the two webhook alert call sites (BOT-03)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -438,7 +438,7 @@ Roughly one phase per day across Thu 30 Jul – Wed 5 Aug 2026. Interview Thu 6 
 | 3. Collector Core & API Sources | 5/6 | Complete    | 2026-08-05 |
 | 4. Playwright & Sheets | 4/4 | Complete    | 2026-08-06 |
 | 5. Apps Script | 3/3 | In Progress|  |
-| 6. Discord Bot | 1/5 | In Progress|  |
+| 6. Discord Bot | 2/5 | In Progress|  |
 | 7. Reliability & Docs | 0/TBD | Not started | - |
 
 ---
