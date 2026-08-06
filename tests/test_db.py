@@ -12,8 +12,14 @@ from typing import Any
 
 import pytest
 
-from creatorpulse.db import DatabaseNotInitialized, connect, upsert_metric
-from creatorpulse.models import MetricRecord
+from creatorpulse.db import (
+    DatabaseNotInitialized,
+    connect,
+    upsert_metric,
+    write_run_failures,
+    write_run_row,
+)
+from creatorpulse.models import MetricRecord, RunFailure
 
 
 def _record(**overrides: Any) -> MetricRecord:
@@ -197,3 +203,47 @@ def test_reader_can_read_while_writer_has_open_transaction(tmp_path: Path) -> No
     writer.commit()
     reader.close()
     writer.close()
+
+
+def test_write_run_row_returns_rowid_not_none(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 1, 1, tzinfo=UTC)
+    finished = datetime(2026, 1, 1, 0, 1, tzinfo=UTC)
+
+    first_id = write_run_row(conn, started, finished, 1, 0)
+    second_id = write_run_row(conn, started, finished, 1, 0)
+
+    assert first_id == 1
+    assert second_id == 2
+
+
+def test_write_run_failures_empty_sequence_writes_nothing_and_does_not_raise(
+    tmp_path: Path,
+) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 1, 1, tzinfo=UTC)
+    finished = datetime(2026, 1, 1, 0, 1, tzinfo=UTC)
+    run_id = write_run_row(conn, started, finished, 0, 0)
+
+    write_run_failures(conn, run_id, [])
+
+    count = conn.execute("SELECT COUNT(*) FROM run_failures").fetchone()[0]
+    assert count == 0
+
+
+def test_write_run_failures_round_trip_matches_run_id(tmp_path: Path) -> None:
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+    started = datetime(2026, 1, 1, tzinfo=UTC)
+    finished = datetime(2026, 1, 1, 0, 1, tzinfo=UTC)
+    run_id = write_run_row(conn, started, finished, 0, 1)
+    failure = RunFailure(creator_id="c1", source="youtube", cause="ValueError", message="boom")
+
+    write_run_failures(conn, run_id, [failure])
+
+    conn.row_factory = sqlite3.Row
+    row = conn.execute("SELECT * FROM run_failures").fetchone()
+    assert row["run_id"] == run_id
+    assert row["creator_id"] == "c1"
+    assert row["source"] == "youtube"
+    assert row["cause"] == "ValueError"
+    assert row["message"] == "boom"

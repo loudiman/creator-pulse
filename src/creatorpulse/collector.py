@@ -8,8 +8,8 @@ import sqlite3
 from datetime import UTC, datetime
 
 from creatorpulse.config import Creator
-from creatorpulse.db import upsert_metric, write_run_row
-from creatorpulse.models import RunResult
+from creatorpulse.db import upsert_metric, write_run_failures, write_run_row
+from creatorpulse.models import RunFailure, RunResult
 from creatorpulse.sources import FETCHERS
 
 logger = logging.getLogger("creatorpulse")
@@ -20,6 +20,7 @@ def collect_once(conn: sqlite3.Connection, creators: list[Creator]) -> RunResult
     started_at = datetime.now(UTC)
     rows_written = 0
     failure_count = 0
+    failures: list[RunFailure] = []
 
     try:
         for creator in creators:
@@ -37,12 +38,22 @@ def collect_once(conn: sqlite3.Connection, creators: list[Creator]) -> RunResult
                     record = fetch(identifier, metric_date)
                 except Exception as exc:  # D-15 — one boundary per (creator, source) pair
                     failure_count += 1
+                    cause = type(exc).__name__
+                    message = str(exc)
                     logger.error(
                         "fetch failed creator=%s source=%s cause=%s: %s",
                         creator.id,
                         source_name,
-                        type(exc).__name__,
-                        str(exc),
+                        cause,
+                        message,
+                    )
+                    failures.append(
+                        RunFailure(
+                            creator_id=creator.id,
+                            source=source_name,
+                            cause=cause,
+                            message=message,
+                        )
                     )
                     continue  # no cross-pair state, no short-circuit (D-15)
 
@@ -54,9 +65,12 @@ def collect_once(conn: sqlite3.Connection, creators: list[Creator]) -> RunResult
                 rows_written += 1
     finally:
         finished_at = datetime.now(UTC)
-        # If write_run_row itself raises here, it replaces the exception in flight — Python's
+        # If either write raises here, it replaces the exception in flight — Python's
         # documented behavior, and the correct outcome: an unwritable database is the more
         # important error to surface.
-        write_run_row(conn, started_at, finished_at, rows_written, failure_count)
+        run_id = write_run_row(conn, started_at, finished_at, rows_written, failure_count)
+        write_run_failures(conn, run_id, failures)
 
-    return RunResult(rows_written=rows_written, failure_count=failure_count)
+    return RunResult(
+        rows_written=rows_written, failure_count=failure_count, failures=tuple(failures)
+    )

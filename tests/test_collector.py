@@ -18,7 +18,7 @@ from creatorpulse import collector
 from creatorpulse.collector import collect_once
 from creatorpulse.config import Creator, load_creators
 from creatorpulse.db import connect, upsert_metric
-from creatorpulse.models import MetricRecord
+from creatorpulse.models import MetricRecord, RunFailure
 from creatorpulse.sources import youtube
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -228,6 +228,49 @@ def test_one_source_failure_does_not_abort_run(
     assert "ValueError" in fail_lines[0]
 
 
+def test_one_source_failure_produces_one_run_failure_with_cause_and_message(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def ok_fetch(identifier: str, metric_date: date) -> MetricRecord:
+        return _ok_record("source_a", metric_date)
+
+    def fail_fetch(identifier: str, metric_date: date) -> MetricRecord:
+        raise ValueError("boom")
+
+    monkeypatch.setitem(collector.FETCHERS, "source_a", ok_fetch)
+    monkeypatch.setitem(collector.FETCHERS, "source_b", fail_fetch)
+
+    creators = [Creator(id="c1", name="C1", sources={"source_a": "id1", "source_b": "id2"})]
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    result = collect_once(conn, creators)
+
+    assert result.failure_count == 1
+    assert len(result.failures) == 1
+    failure = result.failures[0]
+    assert failure == RunFailure(
+        creator_id="c1", source="source_b", cause="ValueError", message="boom"
+    )
+
+    run_id = conn.execute("SELECT id FROM runs ORDER BY id DESC LIMIT 1").fetchone()[0]
+    stored_count = conn.execute(
+        "SELECT COUNT(*) FROM run_failures WHERE run_id = ?", (run_id,)
+    ).fetchone()[0]
+    assert stored_count == result.failure_count
+
+
+def test_registry_miss_writes_no_run_failure_row(tmp_path: Path) -> None:
+    creators = [Creator(id="c1", name="C1", sources={"source_unregistered": "id1"})]
+    conn = connect(tmp_path / "creatorpulse.db", create=True)
+
+    result = collect_once(conn, creators)
+
+    assert result.failure_count == 0
+    assert result.failures == ()
+    count = conn.execute("SELECT COUNT(*) FROM run_failures").fetchone()[0]
+    assert count == 0
+
+
 def test_one_failing_source_fails_every_creator_no_short_circuit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -247,6 +290,7 @@ def test_one_failing_source_fails_every_creator_no_short_circuit(
 
     assert result.failure_count == 3  # no cross-pair state, no short-circuit (D-15)
     assert result.rows_written == 0
+    assert len(result.failures) == result.failure_count
 
 
 def test_two_failing_sources_on_one_creator_produce_two_log_lines(

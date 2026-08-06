@@ -1,10 +1,11 @@
 """Connection factory, schema DDL, metric upsert, and the runs writer — the only SQL module."""
 
 import sqlite3
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 
-from creatorpulse.models import MetricRecord
+from creatorpulse.models import MetricRecord, RunFailure
 
 # Every surface that renders a metric shares this one em dash: the Sheet's Δ Views column and
 # the Discord digest. It lives here rather than in sheets.py so a reader of the database layer
@@ -36,6 +37,18 @@ CREATE TABLE IF NOT EXISTS runs (
     rows_written   INTEGER NOT NULL,
     failure_count  INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS run_failures (
+    run_id      INTEGER NOT NULL,  -- the runs.id row this failure belongs to
+    creator_id  TEXT    NOT NULL,
+    source      TEXT    NOT NULL,
+    cause       TEXT    NOT NULL,  -- exception class name
+    message     TEXT    NOT NULL
+);
+-- No index: a run has at most a handful of failure rows and the only read is by run_id —
+-- omission recorded as deliberate, not forgotten. No UNIQUE constraint: the same
+-- (run_id, creator_id, source) pair failing twice in one run cannot happen (D-15's per-pair
+-- boundary runs each pair once), and a constraint that can never fire is untested code.
 """
 
 UPSERT_METRIC = """
@@ -57,6 +70,11 @@ ON CONFLICT (creator_id, source, metric_date) DO UPDATE SET
 _WRITE_RUN_ROW = """
 INSERT INTO runs (started_at, finished_at, rows_written, failure_count)
 VALUES (:started_at, :finished_at, :rows_written, :failure_count);
+"""
+
+_WRITE_RUN_FAILURE = """
+INSERT INTO run_failures (run_id, creator_id, source, cause, message)
+VALUES (:run_id, :creator_id, :source, :cause, :message);
 """
 
 # Correlated on (creator_id, metric_date), so this uses idx_metrics_creator_date. Rejected
@@ -152,8 +170,10 @@ def write_run_row(
     finished_at: datetime,
     rows_written: int,
     failure_count: int,
-) -> None:
-    conn.execute(
+) -> int:
+    """Write one runs row and return its inserted id, so write_run_failures can attribute
+    failure rows to this exact run without a second query (D-06)."""
+    cursor = conn.execute(
         _WRITE_RUN_ROW,
         {
             "started_at": started_at.isoformat(),
@@ -161,5 +181,33 @@ def write_run_row(
             "rows_written": rows_written,
             "failure_count": failure_count,
         },
+    )
+    conn.commit()
+    # sqlite3 types lastrowid as int | None because it is None before any insert; this INSERT
+    # always produces one, so this names what happened rather than an inline type-ignore.
+    if cursor.lastrowid is None:
+        raise RuntimeError("write_run_row: INSERT produced no lastrowid")
+    return cursor.lastrowid
+
+
+def write_run_failures(
+    conn: sqlite3.Connection, run_id: int, failures: Sequence[RunFailure]
+) -> None:
+    """Write one row per failure, attributed to run_id. An empty sequence writes nothing and
+    commits nothing (D-06)."""
+    if not failures:
+        return
+    conn.executemany(
+        _WRITE_RUN_FAILURE,
+        [
+            {
+                "run_id": run_id,
+                "creator_id": failure.creator_id,
+                "source": failure.source,
+                "cause": failure.cause,
+                "message": failure.message,
+            }
+            for failure in failures
+        ],
     )
     conn.commit()

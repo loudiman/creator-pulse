@@ -18,6 +18,15 @@ class MetricRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class RunFailure:
+    creator_id: str
+    source: str
+    cause: str
+    message: str
+
+
+@dataclass(frozen=True, slots=True)
 class RunResult:
     rows_written: int
     failure_count: int
+    failures: tuple[RunFailure, ...]
