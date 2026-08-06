@@ -5,14 +5,14 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: apps-script
 status: verifying
-stopped_at: Phase 6 context gathered
-last_updated: "2026-08-06T05:15:10.178Z"
+stopped_at: Phase 6 planned — 5 plans, 4 waves, plan-checker PASSED; 06-01 needs 4 Discord env vars set locally
+last_updated: "2026-08-06T07:40:09.654Z"
 last_activity: 2026-08-06
-last_activity_desc: Phase 05 execution started
+last_activity_desc: "Completed quick task 260806-k5w: land deploy/ unit files, .env.example Discord vars, and the dated Hard Rule 1 amendment"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 19
+  total_plans: 24
   completed_plans: 18
 ---
 
@@ -165,6 +165,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-06T05:15:10.098Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-discord-bot/06-CONTEXT.md
+Last session: 2026-08-06T07:40:09.601Z
+Stopped at: Phase 6 planned — 5 plans, 4 waves, plan-checker PASSED; 06-01 needs 4 Discord env vars set locally
+Resume file: .planning/phases/06-discord-bot/06-01-PLAN.md
